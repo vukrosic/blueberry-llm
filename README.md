@@ -367,4 +367,170 @@ python upload_to_hf.py --repo-name username/model  # Upload to HF
 - **Checkpoint frequency**: Adjust `save_every` in ModelConfig for different intervals
 - **Share early**: Upload intermediate checkpoints to track training progress
 
-Happy training! 🚀
+## 🎯 HellaSwag Benchmark
+
+Evaluate your trained model's common sense reasoning capabilities with the HellaSwag benchmark!
+
+### What is HellaSwag?
+
+HellaSwag is a benchmark for evaluating common sense reasoning in language models. It presents a context and four possible endings, where the model must choose the most plausible continuation.
+
+**Example:**
+```
+Context: "A woman is outside with a bucket and a dog. The dog is running around trying to avoid a bath. She..."
+Endings:
+A) "rinses the bucket out with soap and water."
+B) "uses a hose to fill the bucket with water."  ← Correct
+C) "gets into the bathtub with the dog."
+D) "starts doing jumping jacks."
+```
+
+### 🚀 Quick Benchmark
+
+For a fast evaluation on 100 random examples:
+
+```bash
+python quick_benchmark.py
+```
+
+This will:
+- Show available checkpoints
+- Let you choose which model to evaluate
+- Run a quick test on 100 HellaSwag examples
+- Show accuracy vs random baseline (25%)
+
+### 📊 Full Benchmark
+
+For comprehensive evaluation on the full validation set:
+
+```bash
+# Full evaluation (1000+ examples)
+python hellaswag_benchmark.py
+
+# Evaluate specific checkpoint
+python hellaswag_benchmark.py --checkpoint checkpoints/checkpoint-15000
+
+# Limit number of examples
+python hellaswag_benchmark.py --max-examples 500
+
+# Use CPU instead of GPU
+python hellaswag_benchmark.py --device cpu
+```
+
+### 📈 Understanding Results
+
+**Sample Output:**
+```
+🎯 HELLASWAG BENCHMARK RESULTS
+============================================================
+📊 Overall Accuracy: 0.347 (347/1000)
+🎲 Random Baseline: 0.250 (25%)
+📈 Improvement over random: +38.8%
+
+📍 Position Statistics:
+  Position 0: 23.1% correct, 28.4% predicted
+  Position 1: 26.7% correct, 24.1% predicted  
+  Position 2: 25.8% correct, 23.9% predicted
+  Position 3: 24.4% correct, 23.6% predicted
+
+🔍 Sample Examples:
+Example 1:
+Context: A person is seen performing on stage with a guitar...
+Correct ending (1): continues to play the guitar and sing.
+Predicted ending (1): continues to play the guitar and sing.
+Result: ✅ Correct
+```
+
+**What the metrics mean:**
+- **Overall Accuracy**: Percentage of correct predictions (higher is better)
+- **Random Baseline**: 25% (chance level with 4 choices)
+- **Improvement**: How much better than random guessing
+- **Position Statistics**: Shows if model has bias toward certain answer positions
+
+### 🎯 Expected Performance
+
+**Typical results for small models:**
+- **Untrained model**: ~25% (random)
+- **Early training (5K steps)**: ~28-32%
+- **Well-trained model (15K+ steps)**: ~35-45%
+- **Large models (GPT-3 scale)**: ~78-85%
+
+**Performance factors:**
+- **Model size**: Larger models generally perform better
+- **Training data**: More diverse data helps reasoning
+- **Training steps**: More training usually improves performance
+- **Architecture**: Some designs are better for reasoning tasks
+
+### 🔧 Benchmark Features
+
+**hellaswag_benchmark.py** includes:
+- ✅ Full HellaSwag validation set evaluation
+- ✅ Automatic checkpoint detection
+- ✅ GPU/CPU support
+- ✅ Progress tracking with tqdm
+- ✅ Detailed results with examples
+- ✅ JSON results export
+- ✅ Position bias analysis
+
+**quick_benchmark.py** includes:
+- ✅ Fast evaluation on sample data
+- ✅ Works with both training scripts
+- ✅ Simple accuracy reporting
+- ✅ Interactive checkpoint selection
+
+### 📊 Tracking Progress
+
+Monitor your model's reasoning ability throughout training:
+
+```bash
+# Evaluate at different training stages
+python quick_benchmark.py  # Choose checkpoint-5000
+python quick_benchmark.py  # Choose checkpoint-10000  
+python quick_benchmark.py  # Choose checkpoint-15000
+
+# Plot improvement over time
+# Accuracy: 0.287 → 0.324 → 0.347
+```
+
+### 🚨 Troubleshooting
+
+**"Failed to load HellaSwag dataset"**
+```bash
+# Install datasets library
+pip install datasets
+
+# Check internet connection
+# The dataset downloads automatically on first use
+```
+
+**"CUDA out of memory during evaluation"**
+```bash
+# Use CPU for evaluation
+python hellaswag_benchmark.py --device cpu
+
+# Or reduce batch processing (edit the script)
+```
+
+**"No checkpoints found"**
+```bash
+# Make sure you've trained a model first
+python train_llm.py
+
+# Or specify checkpoint path directly
+python hellaswag_benchmark.py --checkpoint path/to/your/checkpoint
+```
+
+### 💡 Improving HellaSwag Performance
+
+**Training strategies:**
+- **More training steps**: 20K+ steps often help
+- **Diverse data**: Include reasoning-heavy text
+- **Larger context**: Increase max_seq_len for better context understanding
+- **Model scaling**: Larger models (more layers/dimensions) perform better
+
+**Data considerations:**
+- **Common sense text**: Stories, how-to guides, explanations
+- **Causal reasoning**: Text with cause-and-effect relationships
+- **Narrative structure**: Stories with logical progressions
+
+Happy benchmarking! 🚀
