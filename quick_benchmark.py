@@ -80,7 +80,7 @@ def get_completion_logprob(model, tokenizer, context, completion, device):
     
     return avg_log_prob
 
-def evaluate_hellaswag_sample(model, tokenizer, device, num_samples=100):
+def evaluate_hellaswag_sample(model, tokenizer, device, num_samples=100, show_examples=True):
     """Quick evaluation on a sample of HellaSwag"""
     print(f"🔍 Loading HellaSwag validation set...")
     
@@ -95,11 +95,12 @@ def evaluate_hellaswag_sample(model, tokenizer, device, num_samples=100):
     sample_data = [dataset[i] for i in indices]
     
     print(f"📊 Evaluating {len(sample_data)} examples...")
+    print(f"🔍 Showing first 5 examples in detail...\n")
     
     correct = 0
     total = 0
     
-    for example in tqdm(sample_data, desc="Evaluating"):
+    for i, example in enumerate(tqdm(sample_data, desc="Evaluating")):
         context = example['ctx']
         endings = example['endings']
         correct_idx = int(example['label'])
@@ -113,15 +114,39 @@ def evaluate_hellaswag_sample(model, tokenizer, device, num_samples=100):
         # Predict highest probability ending
         predicted_idx = max(range(len(log_probs)), key=lambda i: log_probs[i])
         
-        if predicted_idx == correct_idx:
+        is_correct = predicted_idx == correct_idx
+        if is_correct:
             correct += 1
         total += 1
+        
+        # Show detailed examples for first 5
+        if show_examples and i < 5:
+            print(f"\n{'='*60}")
+            print(f"📝 EXAMPLE {i+1}")
+            print(f"{'='*60}")
+            print(f"Context: {context}")
+            print(f"\nChoices:")
+            
+            for j, ending in enumerate(endings):
+                marker = "✅" if j == correct_idx else "❌" if j == predicted_idx else "  "
+                prob_marker = f"[{log_probs[j]:.3f}]"
+                choice_letter = chr(65 + j)  # A, B, C, D
+                print(f"  {marker} {choice_letter}) {ending} {prob_marker}")
+            
+            print(f"\n🎯 Correct answer: {chr(65 + correct_idx)}")
+            print(f"🤖 Model predicted: {chr(65 + predicted_idx)}")
+            print(f"📊 Result: {'✅ CORRECT' if is_correct else '❌ WRONG'}")
+            
+            if i < 4:  # Don't pause after the last detailed example
+                input("\nPress Enter to see next example...")
     
     accuracy = correct / total if total > 0 else 0
     
-    print(f"\n🎯 Quick HellaSwag Results:")
-    print(f"📊 Accuracy: {accuracy:.3f} ({correct}/{total})")
-    print(f"🎲 Random baseline: 0.250")
+    print(f"\n{'='*60}")
+    print(f"🎯 FINAL RESULTS")
+    print(f"{'='*60}")
+    print(f"📊 Overall Accuracy: {accuracy:.3f} ({correct}/{total})")
+    print(f"🎲 Random baseline: 0.250 (25%)")
     
     if accuracy > 0.25:
         improvement = (accuracy - 0.25) / 0.25 * 100
@@ -193,7 +218,10 @@ def main():
     
     # Run quick evaluation
     num_samples = int(input("Number of samples to evaluate (default 100): ") or "100")
-    evaluate_hellaswag_sample(model, tokenizer, device, num_samples)
+    show_examples = input("Show detailed examples? (y/n, default y): ").strip().lower()
+    show_examples = show_examples != 'n'
+    
+    evaluate_hellaswag_sample(model, tokenizer, device, num_samples, show_examples)
 
 if __name__ == "__main__":
     main()
