@@ -196,8 +196,22 @@ class HellaSwagEvaluator:
         # Save results
         if save_results:
             results_file = f"hellaswag_results_{split}.json"
+            # Convert boolean values to strings for JSON compatibility
+            json_safe_results = {}
+            for key, value in evaluation_results.items():
+                if key == 'examples':
+                    # Convert boolean 'correct' field to string
+                    json_safe_examples = []
+                    for example in value:
+                        safe_example = example.copy()
+                        safe_example['correct'] = str(example['correct'])
+                        json_safe_examples.append(safe_example)
+                    json_safe_results[key] = json_safe_examples
+                else:
+                    json_safe_results[key] = value
+            
             with open(results_file, 'w') as f:
-                json.dump(evaluation_results, f, indent=2)
+                json.dump(json_safe_results, f, indent=2)
             print(f"💾 Results saved to {results_file}")
         
         return evaluation_results
