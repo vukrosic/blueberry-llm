@@ -124,18 +124,32 @@ def evaluate_hellaswag_sample(model, tokenizer, device, num_samples=100):
 def main():
     import glob
     
-    # Find checkpoints
-    checkpoints = glob.glob("checkpoints/checkpoint-*")
+    # Find checkpoints (handle both naming patterns)
+    checkpoints = glob.glob("checkpoints/checkpoint-*") + glob.glob("checkpoints/checkpoint_step_*")
     if not checkpoints:
         print("❌ No checkpoints found in 'checkpoints/' directory")
         return
     
-    # Sort by step number
-    checkpoints.sort(key=lambda x: int(x.split('-')[-1]))
+    # Sort by step number (handle both patterns)
+    def extract_step(path):
+        basename = os.path.basename(path)
+        if 'checkpoint-' in basename:
+            return int(basename.split('-')[-1])
+        elif 'checkpoint_step_' in basename:
+            return int(basename.split('_')[-1])
+        return 0
+    
+    checkpoints.sort(key=extract_step)
     
     print("📁 Available checkpoints:")
     for i, checkpoint in enumerate(checkpoints):
-        step = checkpoint.split('-')[-1]
+        basename = os.path.basename(checkpoint)
+        if 'checkpoint-' in basename:
+            step = basename.split('-')[-1]
+        elif 'checkpoint_step_' in basename:
+            step = basename.split('_')[-1]
+        else:
+            step = "unknown"
         print(f"  {i+1}. Step {step} ({checkpoint})")
     
     # Let user choose

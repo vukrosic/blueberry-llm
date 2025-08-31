@@ -229,9 +229,21 @@ def find_checkpoints(checkpoint_dir: str = "checkpoints") -> List[str]:
     if not os.path.exists(checkpoint_dir):
         return []
     
-    checkpoints = glob.glob(os.path.join(checkpoint_dir, "checkpoint-*"))
-    # Sort by step number
-    checkpoints.sort(key=lambda x: int(x.split('-')[-1]) if x.split('-')[-1].isdigit() else 0)
+    # Handle both naming patterns
+    checkpoints = (glob.glob(os.path.join(checkpoint_dir, "checkpoint-*")) + 
+                  glob.glob(os.path.join(checkpoint_dir, "checkpoint_step_*")))
+    
+    # Sort by step number (handle both patterns)
+    def extract_step(path):
+        basename = os.path.basename(path)
+        if 'checkpoint-' in basename:
+            step_part = basename.split('-')[-1]
+            return int(step_part) if step_part.isdigit() else 0
+        elif 'checkpoint_step_' in basename:
+            return int(basename.split('_')[-1])
+        return 0
+    
+    checkpoints.sort(key=extract_step)
     return checkpoints
 
 def main():
@@ -255,7 +267,13 @@ def main():
         
         print("📁 Available checkpoints:")
         for i, checkpoint in enumerate(checkpoints):
-            step = os.path.basename(checkpoint).split('-')[-1]
+            basename = os.path.basename(checkpoint)
+            if 'checkpoint-' in basename:
+                step = basename.split('-')[-1]
+            elif 'checkpoint_step_' in basename:
+                step = basename.split('_')[-1]
+            else:
+                step = "unknown"
             print(f"  {i+1}. Step {step} ({checkpoint})")
         
         while True:
