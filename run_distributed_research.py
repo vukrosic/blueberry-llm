@@ -17,7 +17,7 @@ class DistributedExperimentConfig(ExperimentConfig):
     """Extended config for distributed training"""
     def __init__(self, **kwargs):
         # Extract distributed-specific params
-        self.num_gpus = kwargs.pop('num_gpus', 8)
+        num_gpus = kwargs.pop('num_gpus', 8)
         
         # Set distributed training defaults
         kwargs.setdefault('max_steps', 500)  # Short test runs
@@ -25,6 +25,9 @@ class DistributedExperimentConfig(ExperimentConfig):
         kwargs.setdefault('save_every', 500)  # Save at the end
         
         super().__init__(**kwargs)
+        
+        # Store num_gpus as instance variable
+        self.num_gpus = num_gpus
     
     def to_dict(self):
         result = super().to_dict()

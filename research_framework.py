@@ -32,6 +32,10 @@ class ExperimentConfig:
     learning_rate: float = 0.01
     gradient_accumulation_steps: int = 4
     
+    # Evaluation and saving
+    eval_every: int = 500
+    save_every: int = 1000
+    
     # Data parameters
     max_seq_len: int = 512
     num_documents: int = 3000
