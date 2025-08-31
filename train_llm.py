@@ -16,6 +16,7 @@ import warnings
 import os
 import pickle
 import json
+import glob
 warnings.filterwarnings('ignore')
 
 def set_seed(seed: int = 42):
@@ -390,6 +391,45 @@ def save_checkpoint(model: nn.Module, optimizers: list, schedulers: list, step: 
     print(f"💾 Checkpoint saved at step {step} to {checkpoint_path}")
     return checkpoint_path
 
+def load_checkpoint(checkpoint_path: str, model: nn.Module, optimizers: list, schedulers: list):
+    """Load model checkpoint and resume training state"""
+    print(f"📂 Loading checkpoint from {checkpoint_path}")
+    
+    model_file = os.path.join(checkpoint_path, 'model.pt')
+    checkpoint = torch.load(model_file, map_location='cpu', weights_only=False)
+    
+    # Load model state
+    model.load_state_dict(checkpoint['model_state_dict'])
+    
+    # Load optimizer states if available
+    if 'optimizer_states' in checkpoint and len(checkpoint['optimizer_states']) == len(optimizers):
+        for i, optimizer in enumerate(optimizers):
+            optimizer.load_state_dict(checkpoint['optimizer_states'][i])
+    
+    # Load scheduler states if available
+    if 'scheduler_states' in checkpoint and len(checkpoint['scheduler_states']) == len(schedulers):
+        for i, scheduler in enumerate(schedulers):
+            scheduler.load_state_dict(checkpoint['scheduler_states'][i])
+    
+    start_step = checkpoint.get('step', 0)
+    best_loss = checkpoint.get('loss', float('inf'))
+    
+    print(f"✅ Resumed from step {start_step}, loss: {best_loss:.4f}")
+    return start_step, best_loss
+
+def find_latest_checkpoint(checkpoint_dir: str):
+    """Find the latest checkpoint in the directory"""
+    if not os.path.exists(checkpoint_dir):
+        return None
+    
+    checkpoints = glob.glob(os.path.join(checkpoint_dir, "checkpoint_step_*"))
+    if not checkpoints:
+        return None
+    
+    # Sort by step number
+    checkpoints.sort(key=lambda x: int(os.path.basename(x).split('_')[-1]))
+    return checkpoints[-1]  # Return latest
+
 def train_model(config: ModelConfig, train_loader: DataLoader, val_loader: DataLoader, tokenizer):
     """Train the model with Muon optimizer"""
     print(f"\n🚀 Training Small model with Muon optimizer")
@@ -422,13 +462,27 @@ def train_model(config: ModelConfig, train_loader: DataLoader, val_loader: DataL
 
     scaler = GradScaler() if config.use_amp else None
 
+    # Check for existing checkpoint to resume from
+    latest_checkpoint = find_latest_checkpoint(config.checkpoint_dir)
+    start_step = 0
+    best_val_loss = float('inf')
+    
+    if latest_checkpoint:
+        print(f"🔍 Found existing checkpoint: {latest_checkpoint}")
+        resume_choice = input("Resume training? (y/n, default y): ").strip().lower()
+        if resume_choice != 'n':
+            start_step, best_val_loss = load_checkpoint(latest_checkpoint, model, optimizers, schedulers)
+        else:
+            print("🆕 Starting fresh training...")
+    else:
+        print("🆕 No existing checkpoints found, starting fresh training...")
+    
     # Training loop
     model.train()
-    step = 0
+    step = start_step
     start_time = time.time()
-    best_val_loss = float('inf')
 
-    pbar = tqdm(total=config.max_steps, desc="Training")
+    pbar = tqdm(total=config.max_steps, desc="Training", initial=start_step)
 
     while step < config.max_steps:
         for batch_idx, (x, y) in enumerate(train_loader):
