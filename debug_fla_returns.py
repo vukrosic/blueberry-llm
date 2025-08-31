@@ -26,8 +26,14 @@ def test_fla_returns():
         print(f"GLA returns: {type(result)}")
         if isinstance(result, tuple):
             print(f"  Tuple length: {len(result)}")
-            print(f"  First element shape: {result[0].shape}")
-            print(f"  Second element type: {type(result[1])}")
+            for i, elem in enumerate(result):
+                print(f"  Element {i}: {type(elem)}")
+                if hasattr(elem, 'shape'):
+                    print(f"    Shape: {elem.shape}")
+                elif elem is not None:
+                    print(f"    Value: {elem}")
+                else:
+                    print(f"    Value: None")
         else:
             print(f"  Single tensor shape: {result.shape}")
         
@@ -38,8 +44,14 @@ def test_fla_returns():
         print(f"RetNet returns: {type(result)}")
         if isinstance(result, tuple):
             print(f"  Tuple length: {len(result)}")
-            print(f"  First element shape: {result[0].shape}")
-            print(f"  Second element type: {type(result[1])}")
+            for i, elem in enumerate(result):
+                print(f"  Element {i}: {type(elem)}")
+                if hasattr(elem, 'shape'):
+                    print(f"    Shape: {elem.shape}")
+                elif elem is not None:
+                    print(f"    Value: {elem}")
+                else:
+                    print(f"    Value: None")
         else:
             print(f"  Single tensor shape: {result.shape}")
         
@@ -51,8 +63,14 @@ def test_fla_returns():
             print(f"BasedLinearAttention returns: {type(result)}")
             if isinstance(result, tuple):
                 print(f"  Tuple length: {len(result)}")
-                print(f"  First element shape: {result[0].shape}")
-                print(f"  Second element type: {type(result[1])}")
+                for i, elem in enumerate(result):
+                    print(f"  Element {i}: {type(elem)}")
+                    if hasattr(elem, 'shape'):
+                        print(f"    Shape: {elem.shape}")
+                    elif elem is not None:
+                        print(f"    Value: {elem}")
+                    else:
+                        print(f"    Value: None")
             else:
                 print(f"  Single tensor shape: {result.shape}")
         except Exception as e:
@@ -66,8 +84,14 @@ def test_fla_returns():
         print(f"DeltaNet returns: {type(result)}")
         if isinstance(result, tuple):
             print(f"  Tuple length: {len(result)}")
-            print(f"  First element shape: {result[0].shape}")
-            print(f"  Second element type: {type(result[1])}")
+            for i, elem in enumerate(result):
+                print(f"  Element {i}: {type(elem)}")
+                if hasattr(elem, 'shape'):
+                    print(f"    Shape: {elem.shape}")
+                elif elem is not None:
+                    print(f"    Value: {elem}")
+                else:
+                    print(f"    Value: None")
         else:
             print(f"  Single tensor shape: {result.shape}")
         
