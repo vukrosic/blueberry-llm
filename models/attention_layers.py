@@ -311,10 +311,34 @@ class FLAPaTH(nn.Module):
     
     def __init__(self, config: ExperimentConfig):
         super().__init__()
+        # PaTH attention only supports head_dim in [16, 32, 64, 128]
+        # Current config: d_model=384, n_heads=8 -> head_dim=48 (not supported)
+        # Let's use num_heads=6 to get head_dim=64 (supported)
+        supported_head_dims = [16, 32, 64, 128]
+        original_head_dim = config.d_model // config.n_heads
+        
+        # Find the closest supported head_dim
+        if original_head_dim in supported_head_dims:
+            num_heads = config.n_heads
+        else:
+            # Try to find a divisor of d_model that gives a supported head_dim
+            num_heads = None
+            for head_dim in supported_head_dims:
+                if config.d_model % head_dim == 0:
+                    num_heads = config.d_model // head_dim
+                    break
+            
+            if num_heads is None:
+                # Fallback: use head_dim=64 and adjust hidden_size
+                head_dim = 64
+                num_heads = config.d_model // head_dim
+                if config.d_model % head_dim != 0:
+                    num_heads = 6  # 384 // 64 = 6
+        
         self.path_attn = PaTHAttention(
             hidden_size=config.d_model,
-            num_heads=config.n_heads,
-            num_kv_heads=config.n_heads,
+            num_heads=num_heads,
+            num_kv_heads=num_heads,
             use_forget_gate=False,
             use_qk_norm=False,
             use_low_rank_w=True,
