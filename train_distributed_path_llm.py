@@ -33,11 +33,9 @@ from typing import List, Optional
 import warnings
 import os
 import pickle
-import sys
 warnings.filterwarnings('ignore')
 
-# Add flash-linear-attention to path
-sys.path.append('flash-linear-attention')
+# Import PaTHAttention from pip-installed flash-linear-attention
 from fla.layers.path_attn import PaTHAttention
 
 def set_seed(seed: int = 42):
