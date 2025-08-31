@@ -1,3 +1,18 @@
+TODO:
+Winogrande: A pronoun resolution task that is a good test of commonsense understanding. The baseline is 50%, so any improvement is a strong signal.
+Example: "The trophy would not fit in the brown suitcase because it was too big. What was too big? Answer 1: The trophy. Answer 2: The suitcase."
+PIQA (Physical Interaction QA): Tests understanding of how objects work in the real world. It's a 2-choice QA, so the baseline is 50%.
+Example: "How do you separate yolks from whites? 1) Use a strainer. 2) Use a slotted spoon."
+SIQA (Social Interaction QA): Tests social commonsense and reasoning about people's motivations and actions. Baseline is 33%.
+Example: "Taylor felt embarrassed after the meeting. What was a likely reason? 1) Taylor's phone went off. 2) Taylor's boss praised them. 3) Taylor's proposal was accepted."
+3. Simple Reading Comprehension
+This is a step up in difficulty but can show if the model can locate information in a context.
+SQuAD 1.1: The model has to extract an answer span from a given paragraph. Early in training, it might struggle, but seeing the Exact Match (EM) and F1 scores rise above zero is a good sign.
+
+Research plan
+https://aistudio.google.com/app/prompts?state=%7B%22ids%22:%5B%221f4wzg8QxIPh2-vjdcQ6PkHT6-6od8WvO%22%5D,%22action%22:%22open%22,%22userId%22:%22109465757637184194442%22,%22resourceKeys%22:%7B%7D%7D&usp=sharing
+
+
 # 🫐 Train Your Own Small Language Model
 
 A minimal toolkit for training and using small language models with the Muon optimizer.
