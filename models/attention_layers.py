@@ -7,7 +7,7 @@ import torch.nn.functional as F
 import math
 from typing import Optional, Tuple
 from configs.base_config import ExperimentConfig
-from utils.fla_utils import safe_fla_forward
+# Removed safe_fla_forward import - handling FLA returns directly in each layer
 
 # Import from Flash Linear Attention library - REQUIRED
 try:
