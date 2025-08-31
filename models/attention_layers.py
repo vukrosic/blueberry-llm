@@ -15,7 +15,7 @@ try:
         GatedLinearAttention,
         MultiScaleRetention, 
         Mamba,
-        Based,
+        BasedLinearAttention,
         DeltaNet,
         HGRN,
         HGRN2,
@@ -142,7 +142,11 @@ class FLAGatedLinearAttention(nn.Module):
     
     def forward(self, x: torch.Tensor, **kwargs) -> torch.Tensor:
         # FLA expects input in format [batch, seq_len, hidden_size]
-        return safe_fla_forward(self.gla, x, **kwargs)
+        result = self.gla(x, **kwargs)
+        # FLA layers return (output, cache, extra_info) - we only need the output
+        if isinstance(result, tuple):
+            return result[0]
+        return result
 
 class FLARetNet(nn.Module):
     """RetNet using FLA implementation"""
@@ -158,7 +162,11 @@ class FLARetNet(nn.Module):
         )
     
     def forward(self, x: torch.Tensor, **kwargs) -> torch.Tensor:
-        return safe_fla_forward(self.retnet, x, **kwargs)
+        result = self.retnet(x, **kwargs)
+        # FLA layers return (output, cache, extra_info) - we only need the output
+        if isinstance(result, tuple):
+            return result[0]
+        return result
 
 class FLAMamba(nn.Module):
     """Mamba using FLA implementation"""
@@ -173,20 +181,18 @@ class FLAMamba(nn.Module):
         )
     
     def forward(self, x: torch.Tensor, **kwargs) -> torch.Tensor:
-        result = self.mamba(x)
-        # Handle different return formats
+        result = self.mamba(x, **kwargs)
+        # FLA layers return (output, cache, extra_info) - we only need the output
         if isinstance(result, tuple):
-            output, _ = result
-        else:
-            output = result
-        return output
+            return result[0]
+        return result
 
 class FLABased(nn.Module):
     """Based attention using FLA implementation"""
     
     def __init__(self, config: ExperimentConfig):
         super().__init__()
-        self.based = Based(
+        self.based = BasedLinearAttention(
             hidden_size=config.d_model,
             num_heads=config.n_heads,
             mode='chunk',
@@ -194,13 +200,11 @@ class FLABased(nn.Module):
         )
     
     def forward(self, x: torch.Tensor, **kwargs) -> torch.Tensor:
-        result = self.based(x)
-        # Handle different return formats
+        result = self.based(x, **kwargs)
+        # FLA layers return (output, cache, extra_info) - we only need the output
         if isinstance(result, tuple):
-            output, _ = result
-        else:
-            output = result
-        return output
+            return result[0]
+        return result
 
 class FLADeltaNet(nn.Module):
     """DeltaNet using FLA implementation"""
@@ -215,13 +219,11 @@ class FLADeltaNet(nn.Module):
         )
     
     def forward(self, x: torch.Tensor, **kwargs) -> torch.Tensor:
-        result = self.deltanet(x)
-        # Handle different return formats
+        result = self.deltanet(x, **kwargs)
+        # FLA layers return (output, cache, extra_info) - we only need the output
         if isinstance(result, tuple):
-            output, _ = result
-        else:
-            output = result
-        return output
+            return result[0]
+        return result
 
 class FLAHGRN(nn.Module):
     """HGRN using FLA implementation"""
@@ -236,13 +238,11 @@ class FLAHGRN(nn.Module):
         )
     
     def forward(self, x: torch.Tensor, **kwargs) -> torch.Tensor:
-        result = self.hgrn(x)
-        # Handle different return formats
+        result = self.hgrn(x, **kwargs)
+        # FLA layers return (output, cache, extra_info) - we only need the output
         if isinstance(result, tuple):
-            output, _ = result
-        else:
-            output = result
-        return output
+            return result[0]
+        return result
 
 class FLAHGRN2(nn.Module):
     """HGRN2 using FLA implementation"""
@@ -257,13 +257,11 @@ class FLAHGRN2(nn.Module):
         )
     
     def forward(self, x: torch.Tensor, **kwargs) -> torch.Tensor:
-        result = self.hgrn2(x)
-        # Handle different return formats
+        result = self.hgrn2(x, **kwargs)
+        # FLA layers return (output, cache, extra_info) - we only need the output
         if isinstance(result, tuple):
-            output, _ = result
-        else:
-            output = result
-        return output
+            return result[0]
+        return result
 
 class FLRWKV6(nn.Module):
     """RWKV6 using FLA implementation"""
@@ -278,13 +276,11 @@ class FLRWKV6(nn.Module):
         )
     
     def forward(self, x: torch.Tensor, **kwargs) -> torch.Tensor:
-        result = self.rwkv6(x)
-        # Handle different return formats
+        result = self.rwkv6(x, **kwargs)
+        # FLA layers return (output, cache, extra_info) - we only need the output
         if isinstance(result, tuple):
-            output, _ = result
-        else:
-            output = result
-        return output
+            return result[0]
+        return result
 
 class FLAGSA(nn.Module):
     """GSA using FLA implementation"""
@@ -299,11 +295,9 @@ class FLAGSA(nn.Module):
         )
     
     def forward(self, x: torch.Tensor, **kwargs) -> torch.Tensor:
-        result = self.gsa(x)
-        # Handle different return formats
+        result = self.gsa(x, **kwargs)
+        # FLA layers return (output, cache, extra_info) - we only need the output
         if isinstance(result, tuple):
-            output, _ = result
-        else:
-            output = result
-        return output
+            return result[0]
+        return result
 
