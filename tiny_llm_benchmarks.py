@@ -449,6 +449,254 @@ class TinyLLMBenchmark:
             'examples': examples
         }
 
+    # ==================== BENCHMARK 6: PIQA ====================
+    def evaluate_piqa(self, max_examples: int = 200) -> Dict:
+        """
+        PIQA: Physical Interaction QA
+        Tests understanding of how objects work in the real world
+        2-choice QA, baseline is 50%
+        """
+        print("🔍 Loading PIQA dataset...")
+        try:
+            dataset = load_dataset("piqa", split="validation")
+        except Exception as e:
+            print(f"❌ Failed to load PIQA dataset: {e}")
+            return {'error': str(e)}
+        
+        if max_examples:
+            indices = random.sample(range(len(dataset)), min(max_examples, len(dataset)))
+            sample_data = [dataset[i] for i in indices]
+        else:
+            sample_data = list(dataset)
+        
+        print(f"📊 Evaluating PIQA on {len(sample_data)} examples...")
+        
+        correct = 0
+        total = 0
+        examples = []
+        
+        for i, example in enumerate(tqdm(sample_data, desc="PIQA")):
+            goal = example['goal']
+            sol1 = example['sol1']
+            sol2 = example['sol2']
+            correct_idx = int(example['label'])
+            
+            # Calculate log probabilities for both solutions
+            context1 = f"{goal} {sol1}"
+            context2 = f"{goal} {sol2}"
+            
+            logprob1 = self._get_logprobs(context1)
+            logprob2 = self._get_logprobs(context2)
+            
+            # Predict the solution with higher log probability
+            predicted_idx = 0 if logprob1 > logprob2 else 1
+            is_correct = predicted_idx == correct_idx
+            
+            if is_correct:
+                correct += 1
+            total += 1
+            
+            if i < 5:  # Save examples
+                examples.append({
+                    'goal': goal,
+                    'sol1': sol1,
+                    'sol2': sol2,
+                    'correct_idx': correct_idx,
+                    'predicted_idx': predicted_idx,
+                    'logprob1': logprob1,
+                    'logprob2': logprob2,
+                    'correct': is_correct
+                })
+        
+        accuracy = correct / total if total > 0 else 0
+        return {
+            'task': 'PIQA',
+            'accuracy': accuracy,
+            'correct': correct,
+            'total': total,
+            'baseline': 0.5,
+            'examples': examples
+        }
+
+    # ==================== BENCHMARK 7: SIQA ====================
+    def evaluate_siqa(self, max_examples: int = 200) -> Dict:
+        """
+        SIQA: Social Interaction QA
+        Tests social commonsense and reasoning about people's motivations
+        3-choice QA, baseline is 33%
+        """
+        print("🔍 Loading SIQA dataset...")
+        try:
+            dataset = load_dataset("social_i_qa", split="validation")
+        except Exception as e:
+            print(f"❌ Failed to load SIQA dataset: {e}")
+            return {'error': str(e)}
+        
+        if max_examples:
+            indices = random.sample(range(len(dataset)), min(max_examples, len(dataset)))
+            sample_data = [dataset[i] for i in indices]
+        else:
+            sample_data = list(dataset)
+        
+        print(f"📊 Evaluating SIQA on {len(sample_data)} examples...")
+        
+        correct = 0
+        total = 0
+        examples = []
+        
+        for i, example in enumerate(tqdm(sample_data, desc="SIQA")):
+            context = example['context']
+            question = example['question']
+            answerA = example['answerA']
+            answerB = example['answerB']
+            answerC = example['answerC']
+            correct_idx = int(example['label']) - 1  # Convert 1,2,3 to 0,1,2
+            
+            answers = [answerA, answerB, answerC]
+            
+            # Calculate log probabilities for each answer
+            log_probs = []
+            for answer in answers:
+                full_context = f"{context} {question} {answer}"
+                logprob = self._get_logprobs(full_context)
+                log_probs.append(logprob)
+            
+            # Predict the answer with highest log probability
+            predicted_idx = max(range(len(log_probs)), key=lambda i: log_probs[i])
+            is_correct = predicted_idx == correct_idx
+            
+            if is_correct:
+                correct += 1
+            total += 1
+            
+            if i < 5:  # Save examples
+                examples.append({
+                    'context': context,
+                    'question': question,
+                    'answers': answers,
+                    'correct_idx': correct_idx,
+                    'predicted_idx': predicted_idx,
+                    'log_probs': log_probs,
+                    'correct': is_correct
+                })
+        
+        accuracy = correct / total if total > 0 else 0
+        return {
+            'task': 'SIQA',
+            'accuracy': accuracy,
+            'correct': correct,
+            'total': total,
+            'baseline': 0.333,
+            'examples': examples
+        }
+
+    # ==================== BENCHMARK 8: SQUAD 1.1 (SIMPLIFIED) ====================
+    def evaluate_squad_simple(self, max_examples: int = 100) -> Dict:
+        """
+        Simplified SQuAD 1.1: Reading Comprehension
+        Tests ability to extract answers from context
+        We'll use a simplified version that checks if key words appear in the prediction
+        """
+        print("🔍 Loading SQuAD 1.1 dataset...")
+        try:
+            dataset = load_dataset("squad", split="validation")
+        except Exception as e:
+            print(f"❌ Failed to load SQuAD dataset: {e}")
+            return {'error': str(e)}
+        
+        if max_examples:
+            indices = random.sample(range(len(dataset)), min(max_examples, len(dataset)))
+            sample_data = [dataset[i] for i in indices]
+        else:
+            sample_data = list(dataset)
+        
+        print(f"📊 Evaluating SQuAD (simplified) on {len(sample_data)} examples...")
+        
+        exact_matches = 0
+        partial_matches = 0
+        total = 0
+        examples = []
+        
+        for i, example in enumerate(tqdm(sample_data, desc="SQuAD")):
+            context = example['context']
+            question = example['question']
+            answers = example['answers']['text']
+            
+            if not answers:  # Skip if no answers
+                continue
+            
+            # Use the first answer as ground truth
+            ground_truth = answers[0].lower().strip()
+            
+            # Create prompt for the model
+            prompt = f"Context: {context}\nQuestion: {question}\nAnswer:"
+            
+            # Get model's prediction (next few tokens)
+            tokens = self.tokenizer.encode(prompt, return_tensors='pt').to(self.device)
+            
+            with torch.no_grad():
+                # Generate a few tokens as the answer
+                generated_tokens = []
+                current_tokens = tokens
+                
+                for _ in range(10):  # Generate up to 10 tokens
+                    logits = self.model(current_tokens)
+                    next_token_logits = logits[0, -1, :]
+                    next_token_id = torch.argmax(next_token_logits).item()
+                    
+                    # Stop if we hit end of sequence or punctuation
+                    next_token = self.tokenizer.decode([next_token_id]).strip()
+                    if next_token_id == self.tokenizer.eos_token_id or next_token in ['.', '!', '?', '\n']:
+                        break
+                    
+                    generated_tokens.append(next_token_id)
+                    current_tokens = torch.cat([current_tokens, torch.tensor([[next_token_id]]).to(self.device)], dim=1)
+                
+                if generated_tokens:
+                    predicted_answer = self.tokenizer.decode(generated_tokens).strip().lower()
+                else:
+                    predicted_answer = ""
+            
+            # Check for exact match
+            exact_match = predicted_answer == ground_truth
+            
+            # Check for partial match (key words present)
+            ground_truth_words = set(ground_truth.split())
+            predicted_words = set(predicted_answer.split())
+            partial_match = len(ground_truth_words.intersection(predicted_words)) > 0
+            
+            if exact_match:
+                exact_matches += 1
+                partial_matches += 1
+            elif partial_match:
+                partial_matches += 1
+            
+            total += 1
+            
+            if i < 3:  # Save examples
+                examples.append({
+                    'context': context[:200] + "..." if len(context) > 200 else context,
+                    'question': question,
+                    'ground_truth': ground_truth,
+                    'predicted': predicted_answer,
+                    'exact_match': exact_match,
+                    'partial_match': partial_match
+                })
+        
+        exact_match_score = exact_matches / total if total > 0 else 0
+        partial_match_score = partial_matches / total if total > 0 else 0
+        
+        return {
+            'task': 'SQuAD 1.1 (Simplified)',
+            'exact_match_score': exact_match_score,
+            'partial_match_score': partial_match_score,
+            'exact_matches': exact_matches,
+            'partial_matches': partial_matches,
+            'total': total,
+            'baseline': 0.0,  # Very low baseline for exact match
+            'examples': examples
+        }
+
     # ==================== RUN ALL BENCHMARKS ====================
     def run_all_benchmarks(self, save_results: bool = True) -> Dict:
         """Run all benchmark tasks"""
@@ -464,6 +712,9 @@ class TinyLLMBenchmark:
             ('sentence_completion', lambda: self.evaluate_sentence_completion(50)),
             ('word_association', lambda: self.evaluate_word_association(50)),
             ('simple_qa', lambda: self.evaluate_simple_qa(30)),
+            ('piqa', lambda: self.evaluate_piqa(100)),
+            ('siqa', lambda: self.evaluate_siqa(100)),
+            ('squad', lambda: self.evaluate_squad_simple(50)),
         ]
         
         for name, benchmark_func in benchmarks:
@@ -527,20 +778,48 @@ class TinyLLMBenchmark:
                 continue
             
             print(f"\n🔹 {result['task']}:")
-            print(f"   Accuracy: {result['accuracy']:.3f} ({result['correct']}/{result['total']})")
+            
+            # Handle different result formats
+            if 'accuracy' in result:
+                accuracy = result['accuracy']
+                print(f"   Accuracy: {accuracy:.3f} ({result['correct']}/{result['total']})")
+                if 'baseline' in result:
+                    baseline = result['baseline']
+                    improvement = (accuracy - baseline) / baseline * 100 if baseline > 0 else 0
+                    print(f"   Baseline: {baseline:.3f}, Improvement: {improvement:+.1f}%")
+            elif 'exact_match_score' in result:
+                # SQuAD results
+                print(f"   Exact Match: {result['exact_match_score']:.3f} ({result['exact_matches']}/{result['total']})")
+                print(f"   Partial Match: {result['partial_match_score']:.3f} ({result['partial_matches']}/{result['total']})")
             
             if 'examples' in result and result['examples']:
                 print("   Sample Examples:")
                 for i, example in enumerate(result['examples'][:2]):
-                    status = "✅" if example['correct'] else "❌"
-                    if 'question' in example:
+                    if 'correct' in example:
+                        status = "✅" if example['correct'] else "❌"
+                    elif 'exact_match' in example:
+                        status = "✅" if example['exact_match'] else ("🔶" if example.get('partial_match') else "❌")
+                    else:
+                        status = "❓"
+                    
+                    if 'question' in example and 'valid_answers' in example:
                         print(f"     {status} Q: {example['question']}")
                         print(f"        A: {example['predicted']} (expected: {example['valid_answers']})")
                     elif 'problem' in example:
                         print(f"     {status} {example['problem']} {example['predicted']} (expected: {example['answer']})")
                     elif 'prompt' in example:
                         print(f"     {status} {example['prompt']} → {example['predicted']}")
-                    elif 'context' in example:
+                    elif 'goal' in example:  # PIQA
+                        print(f"     {status} Goal: {example['goal']}")
+                        print(f"        Predicted: {example['predicted_idx']+1}, Correct: {example['correct_idx']+1}")
+                    elif 'context' in example and 'answers' in example:  # SIQA
+                        print(f"     {status} Context: {example['context'][:50]}...")
+                        print(f"        Question: {example['question']}")
+                        print(f"        Predicted: {example['answers'][example['predicted_idx']]}")
+                    elif 'ground_truth' in example:  # SQuAD
+                        print(f"     {status} Q: {example['question']}")
+                        print(f"        Predicted: '{example['predicted']}' | Expected: '{example['ground_truth']}'")
+                    elif 'target' in example:  # LAMBADA
                         print(f"     {status} ...{example['context'][-30:]} → {example['predicted']} (expected: {example['target']})")
         
         print("\n" + "=" * 80)
@@ -569,7 +848,7 @@ def main():
     parser = argparse.ArgumentParser(description="Tiny LLM Benchmark Suite")
     parser.add_argument("--checkpoint", type=str, help="Path to model checkpoint")
     parser.add_argument("--device", type=str, default="auto", help="Device to use (auto, cuda, cpu)")
-    parser.add_argument("--task", type=str, choices=['all', 'lambada', 'arithmetic', 'sentence', 'word', 'qa'], 
+    parser.add_argument("--task", type=str, choices=['all', 'lambada', 'arithmetic', 'sentence', 'word', 'qa', 'piqa', 'siqa', 'squad'], 
                        default='all', help="Specific task to run")
     
     args = parser.parse_args()
@@ -622,7 +901,10 @@ def main():
                 'arithmetic': benchmark.evaluate_arithmetic,
                 'sentence': benchmark.evaluate_sentence_completion,
                 'word': benchmark.evaluate_word_association,
-                'qa': benchmark.evaluate_simple_qa
+                'qa': benchmark.evaluate_simple_qa,
+                'piqa': benchmark.evaluate_piqa,
+                'siqa': benchmark.evaluate_siqa,
+                'squad': benchmark.evaluate_squad_simple
             }
             
             if args.task in task_map:
