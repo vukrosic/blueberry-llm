@@ -67,7 +67,7 @@ class HellaSwagEvaluator:
             raise FileNotFoundError(f"Model file not found: {model_path}")
         
         # Load the checkpoint (it contains model state dict and other info)
-        checkpoint = torch.load(model_path, map_location='cpu')
+        checkpoint = torch.load(model_path, map_location='cpu', weights_only=False)
         if isinstance(checkpoint, dict) and 'model_state_dict' in checkpoint:
             model.load_state_dict(checkpoint['model_state_dict'])
         else:

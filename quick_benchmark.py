@@ -43,7 +43,7 @@ def load_model_from_checkpoint(checkpoint_path):
         model_path = os.path.join(checkpoint_path, "pytorch_model.bin")
     
     # Load the checkpoint (it contains model state dict and other info)
-    checkpoint = torch.load(model_path, map_location='cpu')
+    checkpoint = torch.load(model_path, map_location='cpu', weights_only=False)
     if isinstance(checkpoint, dict) and 'model_state_dict' in checkpoint:
         model.load_state_dict(checkpoint['model_state_dict'])
     else:
