@@ -17,7 +17,7 @@ def test_fla_returns():
     x = torch.randn(2, 32, 256, device=device)
     
     try:
-        from fla.layers import GatedLinearAttention, MultiScaleRetention, Based, DeltaNet
+        from fla.layers import GatedLinearAttention, MultiScaleRetention, BasedLinearAttention, DeltaNet
         
         # Test GLA
         print("\n🧪 Testing GLA...")
@@ -43,11 +43,11 @@ def test_fla_returns():
         else:
             print(f"  Single tensor shape: {result.shape}")
         
-        # Test Based
-        print("\n🧪 Testing Based...")
-        based = Based(hidden_size=256, num_heads=4, mode='chunk').to(device)
+        # Test BasedLinearAttention
+        print("\n🧪 Testing BasedLinearAttention...")
+        based = BasedLinearAttention(hidden_size=256, num_heads=4, mode='chunk').to(device)
         result = based(x)
-        print(f"Based returns: {type(result)}")
+        print(f"BasedLinearAttention returns: {type(result)}")
         if isinstance(result, tuple):
             print(f"  Tuple length: {len(result)}")
             print(f"  First element shape: {result[0].shape}")
