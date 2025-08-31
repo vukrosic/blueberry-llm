@@ -42,6 +42,8 @@ def get_attention_layer(config: ExperimentConfig):
     
     if attention_type == "standard":
         return StandardAttention(config)
+    elif attention_type == "simple_linear":
+        return SimpleLinearAttention(config)
     elif attention_type == "gla":
         return FLAGatedLinearAttention(config)
     elif attention_type == "retnet":
@@ -124,6 +126,53 @@ class StandardAttention(nn.Module):
         attn_output = attn_output.transpose(1, 2).reshape(batch_size, seq_len, self.d_model)
         return self.w_o(attn_output)
 
+class SimpleLinearAttention(nn.Module):
+    """Simple linear attention implementation without FLA dependencies"""
+    
+    def __init__(self, config: ExperimentConfig):
+        super().__init__()
+        self.config = config
+        self.d_model = config.d_model
+        self.n_heads = config.n_heads
+        self.d_k = config.d_model // config.n_heads
+        
+        # Linear projections
+        self.qkv = nn.Linear(config.d_model, config.d_model * 3, bias=False)
+        self.w_o = nn.Linear(config.d_model, config.d_model, bias=False)
+        
+        self.dropout = config.dropout
+    
+    def forward(self, x: torch.Tensor, **kwargs) -> torch.Tensor:
+        batch_size, seq_len = x.size(0), x.size(1)
+        
+        # QKV projections
+        qkv = self.qkv(x).reshape(batch_size, seq_len, 3, self.n_heads, self.d_k)
+        qkv = qkv.permute(2, 0, 3, 1, 4)  # [3, B, H, T, D]
+        Q, K, V = qkv[0], qkv[1], qkv[2]
+        
+        # Apply feature map (ELU + 1 for positivity)
+        Q = F.elu(Q) + 1
+        K = F.elu(K) + 1
+        
+        # Linear attention computation
+        # Compute K^T V first (more efficient)
+        KV = torch.einsum('bhnd,bhnf->bhdf', K, V)  # [B, H, D, F]
+        
+        # Compute normalizer
+        K_sum = K.sum(dim=2, keepdim=True)  # [B, H, 1, D]
+        
+        # Compute output
+        numerator = torch.einsum('bhnd,bhdf->bhnf', Q, KV)  # [B, H, N, F]
+        denominator = torch.einsum('bhnd,bhnd->bhn', Q, K_sum.expand_as(Q))  # [B, H, N]
+        
+        # Avoid division by zero
+        denominator = denominator.unsqueeze(-1) + 1e-6
+        attn_output = numerator / denominator
+        
+        # Reshape and project
+        attn_output = attn_output.transpose(1, 2).reshape(batch_size, seq_len, self.d_model)
+        return self.w_o(attn_output)
+
 # FLA-based attention layers
 class FLAGatedLinearAttention(nn.Module):
     """Gated Linear Attention using FLA implementation"""
@@ -137,13 +186,16 @@ class FLAGatedLinearAttention(nn.Module):
             expand_k=0.5,
             expand_v=1.0,
             use_output_gate=True,
-            fuse_norm=True
+            fuse_norm=True,
+            layer_idx=0  # Add layer_idx parameter
         )
     
     def forward(self, x: torch.Tensor, **kwargs) -> torch.Tensor:
         # FLA expects input in format [batch, seq_len, hidden_size]
-        result = self.gla(x, **kwargs)
-        # FLA layers return (output, cache, extra_info) - we only need the output
+        # Remove any kwargs that might cause issues
+        clean_kwargs = {}
+        result = self.gla(x, **clean_kwargs)
+        # FLA layers return (output, attention_weights, past_key_values)
         if isinstance(result, tuple):
             return result[0]
         return result
@@ -153,19 +205,30 @@ class FLARetNet(nn.Module):
     
     def __init__(self, config: ExperimentConfig):
         super().__init__()
+        # Ensure head_k_dim <= 256 for RetNet
+        head_k_dim = config.d_model // config.n_heads
+        if head_k_dim > 256:
+            # Adjust num_heads to keep head_k_dim <= 256
+            num_heads = (config.d_model + 255) // 256  # Round up division
+        else:
+            num_heads = config.n_heads
+            
         self.retnet = MultiScaleRetention(
             mode='chunk',
             hidden_size=config.d_model,
-            num_heads=config.n_heads,
+            num_heads=num_heads,
             expand_k=1.0,
             expand_v=2.0,
             use_output_gate=True,
-            fuse_norm=True
+            fuse_norm=True,
+            layer_idx=0  # Add layer_idx parameter
         )
     
     def forward(self, x: torch.Tensor, **kwargs) -> torch.Tensor:
-        result = self.retnet(x, **kwargs)
-        # FLA layers return (output, cache, extra_info) - we only need the output
+        # Remove any kwargs that might cause issues
+        clean_kwargs = {}
+        result = self.retnet(x, **clean_kwargs)
+        # FLA layers return (output, attention_weights, past_key_values)
         if isinstance(result, tuple):
             return result[0]
         return result
