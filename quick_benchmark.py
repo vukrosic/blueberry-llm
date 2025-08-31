@@ -36,8 +36,18 @@ def load_model_from_checkpoint(checkpoint_path):
             setattr(config, key, value)
     
     model = MinimalLLM(config)
-    model_path = os.path.join(checkpoint_path, "pytorch_model.bin")
-    model.load_state_dict(torch.load(model_path, map_location='cpu'))
+    
+    # Try both possible model file names
+    model_path = os.path.join(checkpoint_path, "model.pt")
+    if not os.path.exists(model_path):
+        model_path = os.path.join(checkpoint_path, "pytorch_model.bin")
+    
+    # Load the checkpoint (it contains model state dict and other info)
+    checkpoint = torch.load(model_path, map_location='cpu')
+    if isinstance(checkpoint, dict) and 'model_state_dict' in checkpoint:
+        model.load_state_dict(checkpoint['model_state_dict'])
+    else:
+        model.load_state_dict(checkpoint)
     
     return model, config
 
