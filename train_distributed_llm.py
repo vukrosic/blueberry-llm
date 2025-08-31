@@ -1,16 +1,16 @@
 # =============================================================================
-# DISTRIBUTED TRAINING CONFIGURATION - OPTIMIZED FOR 2x RTX 4090
+# DISTRIBUTED TRAINING CONFIGURATION - OPTIMIZED FOR 8x RTX 4090
 # =============================================================================
 # Adjust these variables for your multi-GPU setup
-NUM_GPUS = 2                    # Number of GPUs to use (change to 4, 8, etc.)
+NUM_GPUS = 8                    # Number of GPUs to use
 MASTER_PORT = "12355"           # Port for distributed communication
 BACKEND = "nccl"                # Use "nccl" for NVIDIA GPUs, "gloo" for CPU
-GPU_IDS = [0, 1]                # Specific GPU IDs to use (e.g., [0,1,2,3] for 4 GPUs)
+GPU_IDS = [0, 1, 2, 3, 4, 5, 6, 7]  # All 8 GPUs
 
 # MODEL SCALING FOR MULTI-GPU - MEMORY OPTIMIZED FOR RTX 4090 (24GB VRAM each)
 # Adjust batch size and learning rate based on number of GPUs
-BASE_BATCH_SIZE = 8             # Very conservative batch size to avoid OOM
-BASE_LR = 0.01                  # Adjusted learning rate
+BASE_BATCH_SIZE = 16            # Larger batch size for 8 GPUs
+BASE_LR = 0.01                  # Base learning rate
 SCALE_LR_WITH_GPUS = True       # Whether to scale LR with number of GPUs
 
 # =============================================================================
