@@ -7,6 +7,7 @@ import torch.nn.functional as F
 import math
 from typing import Optional, Tuple
 from configs.base_config import ExperimentConfig
+from utils.fla_utils import safe_fla_forward
 
 # Import from Flash Linear Attention library - REQUIRED
 try:
@@ -141,8 +142,7 @@ class FLAGatedLinearAttention(nn.Module):
     
     def forward(self, x: torch.Tensor, **kwargs) -> torch.Tensor:
         # FLA expects input in format [batch, seq_len, hidden_size]
-        output, _ = self.gla(x)
-        return output
+        return safe_fla_forward(self.gla, x, **kwargs)
 
 class FLARetNet(nn.Module):
     """RetNet using FLA implementation"""
@@ -158,8 +158,7 @@ class FLARetNet(nn.Module):
         )
     
     def forward(self, x: torch.Tensor, **kwargs) -> torch.Tensor:
-        output, _ = self.retnet(x)
-        return output
+        return safe_fla_forward(self.retnet, x, **kwargs)
 
 class FLAMamba(nn.Module):
     """Mamba using FLA implementation"""
@@ -174,7 +173,7 @@ class FLAMamba(nn.Module):
         )
     
     def forward(self, x: torch.Tensor, **kwargs) -> torch.Tensor:
-        return self.mamba(x)
+        return safe_fla_forward(self.mamba, x, **kwargs)
 
 class FLABased(nn.Module):
     """Based attention using FLA implementation"""
@@ -189,8 +188,7 @@ class FLABased(nn.Module):
         )
     
     def forward(self, x: torch.Tensor, **kwargs) -> torch.Tensor:
-        output, _ = self.based(x)
-        return output
+        return safe_fla_forward(self.based, x, **kwargs)
 
 class FLADeltaNet(nn.Module):
     """DeltaNet using FLA implementation"""
@@ -205,8 +203,7 @@ class FLADeltaNet(nn.Module):
         )
     
     def forward(self, x: torch.Tensor, **kwargs) -> torch.Tensor:
-        output, _ = self.deltanet(x)
-        return output
+        return safe_fla_forward(self.deltanet, x, **kwargs)
 
 class FLAHGRN(nn.Module):
     """HGRN using FLA implementation"""
@@ -221,8 +218,7 @@ class FLAHGRN(nn.Module):
         )
     
     def forward(self, x: torch.Tensor, **kwargs) -> torch.Tensor:
-        output, _ = self.hgrn(x)
-        return output
+        return safe_fla_forward(self.hgrn, x, **kwargs)
 
 class FLAHGRN2(nn.Module):
     """HGRN2 using FLA implementation"""
@@ -237,8 +233,7 @@ class FLAHGRN2(nn.Module):
         )
     
     def forward(self, x: torch.Tensor, **kwargs) -> torch.Tensor:
-        output, _ = self.hgrn2(x)
-        return output
+        return safe_fla_forward(self.hgrn2, x, **kwargs)
 
 class FLRWKV6(nn.Module):
     """RWKV6 using FLA implementation"""
@@ -253,8 +248,7 @@ class FLRWKV6(nn.Module):
         )
     
     def forward(self, x: torch.Tensor, **kwargs) -> torch.Tensor:
-        output, _ = self.rwkv6(x)
-        return output
+        return safe_fla_forward(self.rwkv6, x, **kwargs)
 
 class FLAGSA(nn.Module):
     """GSA using FLA implementation"""
@@ -269,6 +263,5 @@ class FLAGSA(nn.Module):
         )
     
     def forward(self, x: torch.Tensor, **kwargs) -> torch.Tensor:
-        output, _ = self.gsa(x)
-        return output
+        return safe_fla_forward(self.gsa, x, **kwargs)
 

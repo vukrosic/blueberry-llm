@@ -79,7 +79,8 @@ def verify_fla():
         x = torch.randn(2, 32, 256, device=device)  # [batch, seq_len, hidden_size]
         
         with torch.no_grad():
-            output, _ = gla(x)
+            from utils.fla_utils import safe_fla_forward
+            output = safe_fla_forward(gla, x)
         
         print(f"✅ GLA forward pass successful: {x.shape} -> {output.shape}")
         
@@ -92,7 +93,7 @@ def verify_fla():
         ).to(device)
         
         with torch.no_grad():
-            output, _ = retnet(x)
+            output = safe_fla_forward(retnet, x)
         
         print(f"✅ RetNet forward pass successful: {x.shape} -> {output.shape}")
         

@@ -34,7 +34,8 @@ def main():
         x = torch.randn(2, 32, 256, device=device)
         
         with torch.no_grad():
-            output, _ = gla(x)
+            from utils.fla_utils import safe_fla_forward
+            output = safe_fla_forward(gla, x)
         
         print(f"✅ GLA test: {x.shape} -> {output.shape}")
         
@@ -47,7 +48,7 @@ def main():
         ).to(device)
         
         with torch.no_grad():
-            output, _ = retnet(x)
+            output = safe_fla_forward(retnet, x)
         
         print(f"✅ RetNet test: {x.shape} -> {output.shape}")
         
