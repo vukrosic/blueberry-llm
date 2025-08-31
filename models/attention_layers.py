@@ -130,14 +130,7 @@ class FLAGatedLinearAttention(nn.Module):
         self.gla = GatedLinearAttention(
             hidden_size=config.d_model,
             num_heads=config.n_heads,
-            expand_k=config.attention_config.expand_k,
-            expand_v=config.attention_config.expand_v,
-            use_gk=config.attention_config.use_gk,
-            use_gv=config.attention_config.use_gv,
-            use_output_gate=config.attention_config.use_output_gate,
-            mode='chunk',  # Use chunk mode for training efficiency
-            fuse_norm=True,
-            norm_eps=1e-6
+            mode='chunk'  # Use chunk mode for training efficiency
         )
     
     def forward(self, x: torch.Tensor, **kwargs) -> torch.Tensor:
@@ -156,9 +149,7 @@ class FLARetNet(nn.Module):
         self.retnet = MultiScaleRetention(
             hidden_size=config.d_model,
             num_heads=config.n_heads,
-            mode='chunk',  # Use chunk mode for training
-            fuse_norm=True,
-            norm_eps=1e-5
+            mode='chunk'  # Use chunk mode for training
         )
     
     def forward(self, x: torch.Tensor, **kwargs) -> torch.Tensor:
@@ -174,10 +165,7 @@ class FLAMamba(nn.Module):
     def __init__(self, config: ExperimentConfig):
         super().__init__()
         self.mamba = Mamba(
-            d_model=config.d_model,
-            d_state=config.attention_config.state_size,
-            d_conv=config.attention_config.conv_kernel,
-            expand=config.attention_config.expand
+            d_model=config.d_model
         )
     
     def forward(self, x: torch.Tensor, **kwargs) -> torch.Tensor:
@@ -195,8 +183,7 @@ class FLABased(nn.Module):
         self.based = BasedLinearAttention(
             hidden_size=config.d_model,
             num_heads=config.n_heads,
-            mode='chunk',
-            fuse_norm=True
+            mode='chunk'
         )
     
     def forward(self, x: torch.Tensor, **kwargs) -> torch.Tensor:
@@ -214,8 +201,7 @@ class FLADeltaNet(nn.Module):
         self.deltanet = DeltaNet(
             hidden_size=config.d_model,
             num_heads=config.n_heads,
-            mode='chunk',
-            fuse_norm=True
+            mode='chunk'
         )
     
     def forward(self, x: torch.Tensor, **kwargs) -> torch.Tensor:
@@ -233,8 +219,7 @@ class FLAHGRN(nn.Module):
         self.hgrn = HGRNAttention(
             hidden_size=config.d_model,
             num_heads=config.n_heads,
-            mode='chunk',
-            fuse_norm=True
+            mode='chunk'
         )
     
     def forward(self, x: torch.Tensor, **kwargs) -> torch.Tensor:
@@ -252,8 +237,7 @@ class FLAHGRN2(nn.Module):
         self.hgrn2 = HGRN2Attention(
             hidden_size=config.d_model,
             num_heads=config.n_heads,
-            mode='chunk',
-            fuse_norm=True
+            mode='chunk'
         )
     
     def forward(self, x: torch.Tensor, **kwargs) -> torch.Tensor:
@@ -271,8 +255,7 @@ class FLRWKV6(nn.Module):
         self.rwkv6 = RWKV6Attention(
             hidden_size=config.d_model,
             num_heads=config.n_heads,
-            mode='chunk',
-            fuse_norm=True
+            mode='chunk'
         )
     
     def forward(self, x: torch.Tensor, **kwargs) -> torch.Tensor:
@@ -290,8 +273,7 @@ class FLAGSA(nn.Module):
         self.gsa = GatedSlotAttention(
             hidden_size=config.d_model,
             num_heads=config.n_heads,
-            mode='chunk',
-            fuse_norm=True
+            mode='chunk'
         )
     
     def forward(self, x: torch.Tensor, **kwargs) -> torch.Tensor:
