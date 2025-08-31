@@ -173,7 +173,13 @@ class FLAMamba(nn.Module):
         )
     
     def forward(self, x: torch.Tensor, **kwargs) -> torch.Tensor:
-        return safe_fla_forward(self.mamba, x, **kwargs)
+        result = self.mamba(x)
+        # Handle different return formats
+        if isinstance(result, tuple):
+            output, _ = result
+        else:
+            output = result
+        return output
 
 class FLABased(nn.Module):
     """Based attention using FLA implementation"""
@@ -188,7 +194,13 @@ class FLABased(nn.Module):
         )
     
     def forward(self, x: torch.Tensor, **kwargs) -> torch.Tensor:
-        return safe_fla_forward(self.based, x, **kwargs)
+        result = self.based(x)
+        # Handle different return formats
+        if isinstance(result, tuple):
+            output, _ = result
+        else:
+            output = result
+        return output
 
 class FLADeltaNet(nn.Module):
     """DeltaNet using FLA implementation"""
@@ -203,7 +215,13 @@ class FLADeltaNet(nn.Module):
         )
     
     def forward(self, x: torch.Tensor, **kwargs) -> torch.Tensor:
-        return safe_fla_forward(self.deltanet, x, **kwargs)
+        result = self.deltanet(x)
+        # Handle different return formats
+        if isinstance(result, tuple):
+            output, _ = result
+        else:
+            output = result
+        return output
 
 class FLAHGRN(nn.Module):
     """HGRN using FLA implementation"""
@@ -218,7 +236,13 @@ class FLAHGRN(nn.Module):
         )
     
     def forward(self, x: torch.Tensor, **kwargs) -> torch.Tensor:
-        return safe_fla_forward(self.hgrn, x, **kwargs)
+        result = self.hgrn(x)
+        # Handle different return formats
+        if isinstance(result, tuple):
+            output, _ = result
+        else:
+            output = result
+        return output
 
 class FLAHGRN2(nn.Module):
     """HGRN2 using FLA implementation"""
@@ -233,7 +257,13 @@ class FLAHGRN2(nn.Module):
         )
     
     def forward(self, x: torch.Tensor, **kwargs) -> torch.Tensor:
-        return safe_fla_forward(self.hgrn2, x, **kwargs)
+        result = self.hgrn2(x)
+        # Handle different return formats
+        if isinstance(result, tuple):
+            output, _ = result
+        else:
+            output = result
+        return output
 
 class FLRWKV6(nn.Module):
     """RWKV6 using FLA implementation"""
@@ -248,7 +278,13 @@ class FLRWKV6(nn.Module):
         )
     
     def forward(self, x: torch.Tensor, **kwargs) -> torch.Tensor:
-        return safe_fla_forward(self.rwkv6, x, **kwargs)
+        result = self.rwkv6(x)
+        # Handle different return formats
+        if isinstance(result, tuple):
+            output, _ = result
+        else:
+            output = result
+        return output
 
 class FLAGSA(nn.Module):
     """GSA using FLA implementation"""
@@ -263,5 +299,11 @@ class FLAGSA(nn.Module):
         )
     
     def forward(self, x: torch.Tensor, **kwargs) -> torch.Tensor:
-        return safe_fla_forward(self.gsa, x, **kwargs)
+        result = self.gsa(x)
+        # Handle different return formats
+        if isinstance(result, tuple):
+            output, _ = result
+        else:
+            output = result
+        return output
 

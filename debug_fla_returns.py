@@ -31,11 +31,6 @@ def test_fla_returns():
         else:
             print(f"  Single tensor shape: {result.shape}")
         
-        # Test with utility
-        from utils.fla_utils import safe_fla_forward
-        output = safe_fla_forward(gla, x)
-        print(f"  Utility output shape: {output.shape}")
-        
         # Test RetNet
         print("\n🧪 Testing RetNet...")
         retnet = MultiScaleRetention(hidden_size=256, num_heads=4, mode='chunk').to(device)
