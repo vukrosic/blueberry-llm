@@ -23,6 +23,16 @@ def main():
         )
         
         x = torch.randn(2, 32, 256)
+        # Check if CUDA is available
+        if not torch.cuda.is_available():
+            print("⚠️ CUDA not available - FLA requires CUDA for Triton kernels")
+            print("❌ Cannot test FLA without GPU")
+            return False
+        
+        device = torch.device('cuda')
+        gla = gla.to(device)
+        x = torch.randn(2, 32, 256, device=device)
+        
         with torch.no_grad():
             output, _ = gla(x)
         
@@ -34,7 +44,7 @@ def main():
             hidden_size=256,
             num_heads=4,
             mode='chunk'
-        )
+        ).to(device)
         
         with torch.no_grad():
             output, _ = retnet(x)

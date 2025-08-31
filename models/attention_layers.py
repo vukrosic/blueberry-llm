@@ -8,7 +8,7 @@ import math
 from typing import Optional, Tuple
 from configs.base_config import ExperimentConfig
 
-# Import from Flash Linear Attention library
+# Import from Flash Linear Attention library - REQUIRED
 try:
     from fla.layers import (
         GatedLinearAttention,
@@ -26,20 +26,17 @@ try:
         FusedRMSNormGated,
         RotaryEmbedding
     )
-    FLA_AVAILABLE = True
     print("✅ Flash Linear Attention library loaded successfully")
 except ImportError as e:
-    print(f"⚠️ Flash Linear Attention not available: {e}")
-    print("📦 Install with: pip install flash-linear-attention")
-    FLA_AVAILABLE = False
+    raise ImportError(
+        f"Flash Linear Attention library is required but not available: {e}\n"
+        f"Install with: pip install flash-linear-attention\n"
+        f"Or run: python setup_fla.py"
+    )
 
 def get_attention_layer(config: ExperimentConfig):
     """Factory function to get attention layer based on config"""
     attention_type = config.attention_config.attention_type.lower()
-    
-    if not FLA_AVAILABLE and attention_type != "standard":
-        print(f"⚠️ FLA not available, falling back to standard attention")
-        attention_type = "standard"
     
     if attention_type == "standard":
         return StandardAttention(config)
@@ -80,10 +77,7 @@ class StandardAttention(nn.Module):
         
         # Rotary embeddings
         if config.attention_config.use_rotary:
-            if FLA_AVAILABLE:
-                self.rotary = RotaryEmbedding(dim=self.d_k)
-            else:
-                self.rotary = SimpleRotary(self.d_k, config.max_seq_len)
+            self.rotary = RotaryEmbedding(dim=self.d_k)
         else:
             self.rotary = None
         
@@ -99,12 +93,8 @@ class StandardAttention(nn.Module):
         
         # Apply rotary embeddings
         if self.rotary is not None:
-            if FLA_AVAILABLE:
-                Q = self.rotary(Q)
-                K = self.rotary(K)
-            else:
-                Q = self.rotary(Q)
-                K = self.rotary(K)
+            Q = self.rotary(Q)
+            K = self.rotary(K)
         
         # Scaled dot-product attention with Flash Attention if available
         if self.config.attention_config.use_flash_attention:

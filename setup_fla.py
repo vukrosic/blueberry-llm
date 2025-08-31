@@ -60,16 +60,23 @@ def verify_fla():
         from fla.modules import RMSNorm, RotaryEmbedding
         print("✅ Modules imported successfully")
         
-        # Test a simple forward pass
-        print("\n🧪 Testing GLA layer...")
+        # Test a simple forward pass (requires CUDA)
+        if not torch.cuda.is_available():
+            print("⚠️ CUDA not available - FLA requires CUDA for Triton kernels")
+            print("✅ FLA imports work, but forward pass requires GPU")
+            return True
+        
+        print("\n🧪 Testing GLA layer on CUDA...")
+        device = torch.device('cuda')
+        
         gla = GatedLinearAttention(
             hidden_size=256,
             num_heads=4,
             mode='chunk'
-        )
+        ).to(device)
         
-        # Create test input
-        x = torch.randn(2, 32, 256)  # [batch, seq_len, hidden_size]
+        # Create test input on CUDA
+        x = torch.randn(2, 32, 256, device=device)  # [batch, seq_len, hidden_size]
         
         with torch.no_grad():
             output, _ = gla(x)
@@ -77,12 +84,12 @@ def verify_fla():
         print(f"✅ GLA forward pass successful: {x.shape} -> {output.shape}")
         
         # Test RetNet
-        print("\n🧪 Testing RetNet layer...")
+        print("\n🧪 Testing RetNet layer on CUDA...")
         retnet = MultiScaleRetention(
             hidden_size=256,
             num_heads=4,
             mode='chunk'
-        )
+        ).to(device)
         
         with torch.no_grad():
             output, _ = retnet(x)
