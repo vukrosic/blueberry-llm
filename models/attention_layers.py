@@ -126,9 +126,6 @@ class FLAGatedLinearAttention(nn.Module):
     
     def __init__(self, config: ExperimentConfig):
         super().__init__()
-        if not FLA_AVAILABLE:
-            raise ImportError("Flash Linear Attention library required for GLA")
-        
         self.gla = GatedLinearAttention(
             hidden_size=config.d_model,
             num_heads=config.n_heads,
@@ -152,9 +149,6 @@ class FLARetNet(nn.Module):
     
     def __init__(self, config: ExperimentConfig):
         super().__init__()
-        if not FLA_AVAILABLE:
-            raise ImportError("Flash Linear Attention library required for RetNet")
-        
         self.retnet = MultiScaleRetention(
             hidden_size=config.d_model,
             num_heads=config.n_heads,
@@ -172,9 +166,6 @@ class FLAMamba(nn.Module):
     
     def __init__(self, config: ExperimentConfig):
         super().__init__()
-        if not FLA_AVAILABLE:
-            raise ImportError("Flash Linear Attention library required for Mamba")
-        
         self.mamba = Mamba(
             d_model=config.d_model,
             d_state=config.attention_config.state_size,
@@ -190,9 +181,6 @@ class FLABased(nn.Module):
     
     def __init__(self, config: ExperimentConfig):
         super().__init__()
-        if not FLA_AVAILABLE:
-            raise ImportError("Flash Linear Attention library required for Based")
-        
         self.based = Based(
             hidden_size=config.d_model,
             num_heads=config.n_heads,
@@ -209,9 +197,6 @@ class FLADeltaNet(nn.Module):
     
     def __init__(self, config: ExperimentConfig):
         super().__init__()
-        if not FLA_AVAILABLE:
-            raise ImportError("Flash Linear Attention library required for DeltaNet")
-        
         self.deltanet = DeltaNet(
             hidden_size=config.d_model,
             num_heads=config.n_heads,
@@ -228,9 +213,6 @@ class FLAHGRN(nn.Module):
     
     def __init__(self, config: ExperimentConfig):
         super().__init__()
-        if not FLA_AVAILABLE:
-            raise ImportError("Flash Linear Attention library required for HGRN")
-        
         self.hgrn = HGRN(
             hidden_size=config.d_model,
             num_heads=config.n_heads,
@@ -247,9 +229,6 @@ class FLAHGRN2(nn.Module):
     
     def __init__(self, config: ExperimentConfig):
         super().__init__()
-        if not FLA_AVAILABLE:
-            raise ImportError("Flash Linear Attention library required for HGRN2")
-        
         self.hgrn2 = HGRN2(
             hidden_size=config.d_model,
             num_heads=config.n_heads,
@@ -266,9 +245,6 @@ class FLRWKV6(nn.Module):
     
     def __init__(self, config: ExperimentConfig):
         super().__init__()
-        if not FLA_AVAILABLE:
-            raise ImportError("Flash Linear Attention library required for RWKV6")
-        
         self.rwkv6 = RWKV6(
             hidden_size=config.d_model,
             num_heads=config.n_heads,
@@ -285,9 +261,6 @@ class FLAGSA(nn.Module):
     
     def __init__(self, config: ExperimentConfig):
         super().__init__()
-        if not FLA_AVAILABLE:
-            raise ImportError("Flash Linear Attention library required for GSA")
-        
         self.gsa = GSA(
             hidden_size=config.d_model,
             num_heads=config.n_heads,
@@ -299,23 +272,3 @@ class FLAGSA(nn.Module):
         output, _ = self.gsa(x)
         return output
 
-# Fallback implementations when FLA is not available
-class SimpleRotary(nn.Module):
-    """Simple rotary position embedding fallback"""
-    
-    def __init__(self, dim: int, max_seq_len: int):
-        super().__init__()
-        angular_freq = (1 / 10000) ** torch.linspace(0, 1, steps=dim//4, dtype=torch.float32)
-        angular_freq = torch.cat([angular_freq, angular_freq.new_zeros(dim//4)])
-        t = torch.arange(max_seq_len, dtype=torch.float32)
-        theta = torch.einsum("i,j -> ij", t, angular_freq)
-        self.register_buffer('cos', theta.cos(), persistent=False)
-        self.register_buffer('sin', theta.sin(), persistent=False)
-
-    def forward(self, x_BTHD: torch.Tensor):
-        assert self.cos.size(0) >= x_BTHD.size(-3)
-        cos, sin = self.cos[None, :x_BTHD.size(-3), None, :], self.sin[None, :x_BTHD.size(-3), None, :]
-        x1, x2 = x_BTHD.to(dtype=torch.float32).chunk(2, dim=-1)
-        y1 = x1 * cos + x2 * sin
-        y2 = x1 * (-sin) + x2 * cos
-        return torch.cat((y1, y2), 3).type_as(x_BTHD)

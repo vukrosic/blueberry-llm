@@ -9,12 +9,15 @@ from typing import Optional, Dict, Any
 from configs.base_config import ExperimentConfig
 from .attention_layers import get_attention_layer
 
-# Try to import FLA modules
+# Import FLA modules - REQUIRED
 try:
     from fla.modules import RMSNorm, FusedRMSNormGated
-    FLA_AVAILABLE = True
-except ImportError:
-    FLA_AVAILABLE = False
+except ImportError as e:
+    raise ImportError(
+        f"Flash Linear Attention library is required: {e}\n"
+        f"Install with: pip install flash-linear-attention\n"
+        f"Or run: python setup_fla.py"
+    )
 
 class BaseTransformer(nn.Module):
     """Base transformer model with configurable attention mechanisms"""
@@ -32,11 +35,8 @@ class BaseTransformer(nn.Module):
             TransformerBlock(config) for _ in range(config.n_layers)
         ])
         
-        # Output layers - use FLA if available
-        if FLA_AVAILABLE:
-            self.norm = RMSNorm(config.d_model)
-        else:
-            self.norm = nn.RMSNorm(config.d_model)
+        # Output layers - use FLA RMSNorm
+        self.norm = RMSNorm(config.d_model)
         self.output_dropout = nn.Dropout(config.dropout)
         
         # Language modeling head (tied weights)
@@ -89,13 +89,9 @@ class TransformerBlock(nn.Module):
         # Feed-forward network
         self.feed_forward = FeedForward(config.d_model, config.d_ff, config.dropout)
         
-        # Layer normalization - use FLA if available
-        if FLA_AVAILABLE:
-            self.norm1 = RMSNorm(config.d_model)
-            self.norm2 = RMSNorm(config.d_model)
-        else:
-            self.norm1 = nn.RMSNorm(config.d_model)
-            self.norm2 = nn.RMSNorm(config.d_model)
+        # Layer normalization - use FLA RMSNorm
+        self.norm1 = RMSNorm(config.d_model)
+        self.norm2 = RMSNorm(config.d_model)
         
         # Dropout
         self.dropout = nn.Dropout(config.dropout)

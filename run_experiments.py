@@ -36,7 +36,7 @@ def main():
     print("Based on Flash Linear Attention architectures")
     print()
     
-    # Check GPU availability
+    # Check GPU availability - REQUIRED for FLA
     if torch.cuda.is_available():
         gpu_count = torch.cuda.device_count()
         print(f"🔍 Available GPUs: {gpu_count}")
@@ -45,7 +45,21 @@ def main():
             memory_gb = torch.cuda.get_device_properties(i).total_memory / 1e9
             print(f"  GPU {i}: {gpu_name} ({memory_gb:.1f} GB)")
     else:
-        print("⚠️ No CUDA GPUs available, using CPU")
+        print("❌ No CUDA GPUs available!")
+        print("💡 Flash Linear Attention requires CUDA for Triton kernels")
+        print("   Only standard attention will work on CPU")
+        
+        # Check if any experiments use FLA
+        from experiments.experiment_definitions import create_attention_experiments
+        attention_experiments = create_attention_experiments()
+        fla_experiments = [exp for exp in attention_experiments if exp.attention_config.attention_type != "standard"]
+        
+        if fla_experiments:
+            print(f"⚠️ {len(fla_experiments)} experiments require CUDA but none available")
+            confirm = input("Continue anyway? (y/N): ").strip().lower()
+            if confirm != 'y':
+                print("Aborted. Please run on a machine with CUDA GPUs.")
+                return
     
     # Determine distributed training
     use_distributed = False

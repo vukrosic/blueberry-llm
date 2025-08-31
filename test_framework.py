@@ -11,7 +11,7 @@ def test_model_creation():
     """Test that models can be created with different attention types"""
     print("🧪 Testing model creation...")
     
-    # Test standard attention (always available)
+    # Test standard attention
     config = ExperimentConfig(
         name="test_standard",
         d_model=128,
@@ -25,47 +25,26 @@ def test_model_creation():
     model = BaseTransformer(config)
     print(f"✅ Standard attention model: {model.get_num_params():,} parameters")
     
-    # Test FLA models if available
-    try:
-        import fla
-        fla_available = True
-        print("📦 Flash Linear Attention detected")
-    except ImportError:
-        fla_available = False
-        print("⚠️ Flash Linear Attention not available, testing fallbacks")
+    # Test FLA models - these will fail hard if FLA is not available
+    fla_models = ["gla", "retnet", "mamba", "based", "deltanet", "hgrn", "rwkv6", "gsa"]
     
-    # Test GLA
-    config.attention_config = AttentionConfig(attention_type="gla")
-    model_gla = BaseTransformer(config)
-    status = "FLA" if fla_available else "fallback"
-    print(f"✅ GLA model ({status}): {model_gla.get_num_params():,} parameters")
-    
-    # Test RetNet
-    config.attention_config = AttentionConfig(attention_type="retnet")
-    model_retnet = BaseTransformer(config)
-    status = "FLA" if fla_available else "fallback"
-    print(f"✅ RetNet model ({status}): {model_retnet.get_num_params():,} parameters")
-    
-    # Test Mamba
-    config.attention_config = AttentionConfig(attention_type="mamba")
-    model_mamba = BaseTransformer(config)
-    status = "FLA" if fla_available else "fallback"
-    print(f"✅ Mamba model ({status}): {model_mamba.get_num_params():,} parameters")
-    
-    # Test additional FLA models if available
-    if fla_available:
-        fla_models = ["based", "deltanet", "hgrn", "rwkv6", "gsa"]
-        for model_type in fla_models:
-            try:
-                config.attention_config = AttentionConfig(attention_type=model_type)
-                model_fla = BaseTransformer(config)
-                print(f"✅ {model_type.upper()} model (FLA): {model_fla.get_num_params():,} parameters")
-            except Exception as e:
-                print(f"⚠️ {model_type.upper()} model failed: {e}")
+    for model_type in fla_models:
+        try:
+            config.attention_config = AttentionConfig(attention_type=model_type)
+            model_fla = BaseTransformer(config)
+            print(f"✅ {model_type.upper()} model (FLA): {model_fla.get_num_params():,} parameters")
+        except Exception as e:
+            print(f"❌ {model_type.upper()} model failed: {e}")
+            raise  # Re-raise to fail hard
 
 def test_forward_pass():
     """Test forward pass with different models"""
     print("\n🧪 Testing forward pass...")
+    
+    # Check if CUDA is available for FLA
+    if not torch.cuda.is_available():
+        print("⚠️ CUDA not available - FLA requires CUDA for Triton kernels")
+        print("🔄 Testing on CPU (may fail for FLA models)")
     
     config = ExperimentConfig(
         name="test_forward",
@@ -79,21 +58,15 @@ def test_forward_pass():
     
     # Create test input
     batch_size, seq_len = 2, 32
-    x = torch.randint(0, 1000, (batch_size, seq_len))
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    x = torch.randint(0, 1000, (batch_size, seq_len), device=device)
     
-    # Check if FLA is available
-    try:
-        import fla
-        fla_available = True
-        attention_types = ["standard", "gla", "retnet", "mamba", "based", "deltanet"]
-    except ImportError:
-        fla_available = False
-        attention_types = ["standard", "gla", "retnet", "mamba"]  # Will fallback to standard
+    attention_types = ["standard", "gla", "retnet", "mamba", "based", "deltanet"]
     
     for attention_type in attention_types:
         try:
             config.attention_config = AttentionConfig(attention_type=attention_type)
-            model = BaseTransformer(config)
+            model = BaseTransformer(config).to(device)
             model.eval()
             
             with torch.no_grad():
@@ -102,11 +75,11 @@ def test_forward_pass():
             expected_shape = (batch_size, seq_len, config.vocab_size)
             assert logits.shape == expected_shape, f"Wrong output shape for {attention_type}"
             
-            status = "FLA" if fla_available and attention_type != "standard" else "standard"
-            print(f"✅ {attention_type} forward pass ({status}): {logits.shape}")
+            print(f"✅ {attention_type} forward pass: {logits.shape}")
             
         except Exception as e:
-            print(f"⚠️ {attention_type} forward pass failed: {e}")
+            print(f"❌ {attention_type} forward pass failed: {e}")
+            raise  # Re-raise to fail hard
 
 def test_experiment_definitions():
     """Test that experiment definitions are valid"""
