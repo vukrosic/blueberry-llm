@@ -191,15 +191,14 @@ class FLABased(nn.Module):
     
     def __init__(self, config: ExperimentConfig):
         super().__init__()
-        # For BasedLinearAttention, we need feature_dim * num_heads to be divisible by head_dim
-        # head_dim = hidden_size // num_key_value_heads = 384 // 8 = 48
-        # So we need feature_dim such that feature_dim * num_heads is divisible by 48
-        # Let's use feature_dim = 6, so 6 * 8 = 48, which equals head_dim
+        # For BasedLinearAttention, we need to be careful with dimensions
+        # The feature_dim should be small (typically 16) and num_heads should match
+        # Let's use standard values that work well
         self.based = BasedLinearAttention(
             hidden_size=config.d_model,
             num_heads=config.n_heads,
             num_key_value_heads=config.n_heads,
-            feature_dim=config.d_model // config.n_heads,  # This ensures proper dimensions
+            feature_dim=16,  # Use standard feature_dim
             mode='chunk'
         )
     

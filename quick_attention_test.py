@@ -85,12 +85,17 @@ def main():
         # Print quick summary
         print(f"\n📊 QUICK RESULTS SUMMARY:")
         for result in results:
+            # Get experiment name from config if not in result directly
+            exp_name = result.get('experiment_name') or result.get('config', {}).get('name', 'Unknown')
+            
             if result.get('success', False):
-                final_loss = result.get('final_loss', 'N/A')
-                tokens_per_sec = result.get('tokens_per_sec', 'N/A')
-                print(f"  ✅ {result['experiment_name']}: Loss={final_loss}, Speed={tokens_per_sec} tok/s")
+                final_metrics = result.get('result', {}).get('final_metrics', {})
+                final_loss = final_metrics.get('val_loss', 'N/A')
+                tokens_per_sec = final_metrics.get('tokens_per_sec', 'N/A')
+                print(f"  ✅ {exp_name}: Loss={final_loss}, Speed={tokens_per_sec} tok/s")
             else:
-                print(f"  ❌ {result['experiment_name']}: Failed")
+                error_msg = result.get('error', 'Unknown error')
+                print(f"  ❌ {exp_name}: {error_msg}")
                 
     except KeyboardInterrupt:
         print(f"\n⚠️ Interrupted by user")
