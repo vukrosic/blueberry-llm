@@ -81,11 +81,12 @@ class StandardAttention(nn.Module):
         self.qkv = nn.Linear(config.d_model, config.d_model * 3, bias=False)
         self.w_o = nn.Linear(config.d_model, config.d_model, bias=False)
         
-        # Rotary embeddings
-        if config.attention_config.use_rotary:
-            self.rotary = RotaryEmbedding(dim=self.d_k)
-        else:
-            self.rotary = None
+        # Rotary embeddings - use simple implementation to avoid FLA dependency
+        self.use_rotary = config.attention_config.use_rotary
+        if self.use_rotary:
+            self.register_buffer('cos_cached', None)
+            self.register_buffer('sin_cached', None)
+            self._build_rotary_cache(config.max_seq_len)
         
         self.dropout = config.dropout
     
@@ -98,9 +99,8 @@ class StandardAttention(nn.Module):
         Q, K, V = qkv[0], qkv[1], qkv[2]
         
         # Apply rotary embeddings
-        if self.rotary is not None:
-            Q = self.rotary(Q)
-            K = self.rotary(K)
+        if self.use_rotary:
+            Q, K = self._apply_rotary_pos_emb(Q, K, seq_len)
         
         # Scaled dot-product attention with Flash Attention if available
         if self.config.attention_config.use_flash_attention:
@@ -125,6 +125,28 @@ class StandardAttention(nn.Module):
         # Reshape and project
         attn_output = attn_output.transpose(1, 2).reshape(batch_size, seq_len, self.d_model)
         return self.w_o(attn_output)
+    
+    def _build_rotary_cache(self, max_seq_len):
+        """Build rotary embedding cache"""
+        inv_freq = 1.0 / (10000 ** (torch.arange(0, self.d_k, 2).float() / self.d_k))
+        t = torch.arange(max_seq_len).type_as(inv_freq)
+        freqs = torch.einsum('i,j->ij', t, inv_freq)
+        emb = torch.cat((freqs, freqs), dim=-1)
+        self.register_buffer('cos_cached', emb.cos()[None, None, :, :])
+        self.register_buffer('sin_cached', emb.sin()[None, None, :, :])
+    
+    def _apply_rotary_pos_emb(self, q, k, seq_len):
+        """Apply rotary position embeddings"""
+        cos = self.cos_cached[:, :, :seq_len, :]
+        sin = self.sin_cached[:, :, :seq_len, :]
+        
+        def rotate_half(x):
+            x1, x2 = x[..., :x.shape[-1]//2], x[..., x.shape[-1]//2:]
+            return torch.cat((-x2, x1), dim=-1)
+        
+        q_embed = (q * cos) + (rotate_half(q) * sin)
+        k_embed = (k * cos) + (rotate_half(k) * sin)
+        return q_embed, k_embed
 
 class SimpleLinearAttention(nn.Module):
     """Simple linear attention implementation without FLA dependencies"""
