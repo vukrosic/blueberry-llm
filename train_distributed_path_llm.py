@@ -551,7 +551,7 @@ class DistributedSampler:
     def set_epoch(self, epoch):
         self.epoch = epoch
 
-def train_model(config: ModelConfig, train_loader: DataLoader, val_loader: DataLoader):
+def train_model(config: ModelConfig, train_loader: DataLoader, val_loader: DataLoader, train_sampler):
     """Train the model with distributed optimizers"""
     rank = dist.get_rank()
     world_size = dist.get_world_size()
@@ -842,7 +842,7 @@ def main():
 
     # Train model
     start_time = time.time()
-    model, final_metrics = train_model(config, train_loader, val_loader)
+    model, final_metrics = train_model(config, train_loader, val_loader, train_sampler)
     total_time = time.time() - start_time
 
     if master_process:
