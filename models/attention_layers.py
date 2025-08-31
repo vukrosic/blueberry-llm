@@ -17,10 +17,10 @@ try:
         Mamba,
         BasedLinearAttention,
         DeltaNet,
-        HGRN,
-        HGRN2,
-        RWKV6,
-        GSA
+        HGRNAttention,
+        HGRN2Attention,
+        RWKV6Attention,
+        GatedSlotAttention
     )
     from fla.modules import (
         RMSNorm,
@@ -230,7 +230,7 @@ class FLAHGRN(nn.Module):
     
     def __init__(self, config: ExperimentConfig):
         super().__init__()
-        self.hgrn = HGRN(
+        self.hgrn = HGRNAttention(
             hidden_size=config.d_model,
             num_heads=config.n_heads,
             mode='chunk',
@@ -249,7 +249,7 @@ class FLAHGRN2(nn.Module):
     
     def __init__(self, config: ExperimentConfig):
         super().__init__()
-        self.hgrn2 = HGRN2(
+        self.hgrn2 = HGRN2Attention(
             hidden_size=config.d_model,
             num_heads=config.n_heads,
             mode='chunk',
@@ -268,7 +268,7 @@ class FLRWKV6(nn.Module):
     
     def __init__(self, config: ExperimentConfig):
         super().__init__()
-        self.rwkv6 = RWKV6(
+        self.rwkv6 = RWKV6Attention(
             hidden_size=config.d_model,
             num_heads=config.n_heads,
             mode='chunk',
@@ -287,7 +287,7 @@ class FLAGSA(nn.Module):
     
     def __init__(self, config: ExperimentConfig):
         super().__init__()
-        self.gsa = GSA(
+        self.gsa = GatedSlotAttention(
             hidden_size=config.d_model,
             num_heads=config.n_heads,
             mode='chunk',
