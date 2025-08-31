@@ -23,7 +23,7 @@ def test_attention_layers():
     # Config already created above
     
     # Test different attention types
-    attention_types = ['gla', 'retnet', 'deltanet', 'based']
+    attention_types = ['gla', 'retnet', 'deltanet', 'based', 'path']
     
     for attention_type in attention_types:
         print(f"\n🔍 Testing {attention_type.upper()} attention layer...")

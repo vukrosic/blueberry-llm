@@ -8,6 +8,7 @@ from .attention_layers import (
     FLAGatedLinearAttention,
     FLARetNet,
     FLAMamba,
+    FLAPaTH,
     get_attention_layer
 )
 
@@ -17,5 +18,6 @@ __all__ = [
     'FLAGatedLinearAttention',
     'FLARetNet',
     'FLAMamba',
+    'FLAPaTH',
     'get_attention_layer'
 ]

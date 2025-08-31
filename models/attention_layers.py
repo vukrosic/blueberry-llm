@@ -20,7 +20,8 @@ try:
         HGRNAttention,
         HGRN2Attention,
         RWKV6Attention,
-        GatedSlotAttention
+        GatedSlotAttention,
+        PaTHAttention
     )
     from fla.modules import (
         RMSNorm,
@@ -59,6 +60,8 @@ def get_attention_layer(config: ExperimentConfig):
         return FLRWKV6(config)
     elif attention_type == "gsa":
         return FLAGSA(config)
+    elif attention_type == "path":
+        return FLAPaTH(config)
     else:
         raise ValueError(f"Unknown attention type: {attention_type}")
 
@@ -298,6 +301,31 @@ class FLAGSA(nn.Module):
     def forward(self, x: torch.Tensor, **kwargs) -> torch.Tensor:
         result = self.gsa(x, **kwargs)
         # FLA layers return (output, cache, extra_info) - we only need the output
+        if isinstance(result, tuple):
+            return result[0]
+        return result
+
+
+class FLAPaTH(nn.Module):
+    """PaTH Attention using FLA implementation"""
+    
+    def __init__(self, config: ExperimentConfig):
+        super().__init__()
+        self.path_attn = PaTHAttention(
+            hidden_size=config.d_model,
+            num_heads=config.n_heads,
+            num_kv_heads=config.n_heads,
+            use_forget_gate=False,
+            use_qk_norm=False,
+            use_low_rank_w=True,
+            use_w_shortconv=True,
+            conv_size=3,
+            conv_bias=False
+        )
+    
+    def forward(self, x: torch.Tensor, **kwargs) -> torch.Tensor:
+        result = self.path_attn(x, **kwargs)
+        # PaTH attention returns (output, attn_weights, past_key_values) - we only need the output
         if isinstance(result, tuple):
             return result[0]
         return result
