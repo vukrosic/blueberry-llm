@@ -56,47 +56,56 @@ def main():
     os.environ["MASTER_ADDR"] = "localhost" 
     os.environ["MASTER_PORT"] = "12355"
     
-    # Override model config
-    config = ModelConfig(
+    # Override model config - using global ModelConfig
+    global ModelConfig
+    
+    # Create new config class with our parameters
+    class ExperimentModelConfig:
         # Architecture
-        d_model={config.d_model},
-        n_heads={config.n_heads},
-        n_layers={config.n_layers},
-        d_ff={config.d_ff},
+        d_model = {config.d_model}
+        n_heads = {config.n_heads}
+        n_layers = {config.n_layers}
+        d_ff = {config.d_ff}
+        batch_size = {config.batch_size}
         
         # Training
-        max_steps={config.max_steps},
-        batch_size={config.batch_size},
-        gradient_accumulation_steps={config.gradient_accumulation_steps},
+        max_steps = {config.max_steps}
+        gradient_accumulation_steps = {config.gradient_accumulation_steps}
+        muon_lr = {config.learning_rate}  # Use learning_rate as muon_lr
         
         # Data
-        max_seq_len={config.max_seq_len},
-        num_documents={config.num_documents},
-        max_tokens={config.max_tokens},
+        max_seq_len = {config.max_seq_len}
+        num_documents = {config.num_documents}
+        max_tokens = {config.max_tokens}
         
         # Optimization
-        weight_decay={config.weight_decay},
-        dropout={config.dropout},
-        use_amp={config.use_amp},
+        weight_decay = {config.weight_decay}
+        dropout = {config.dropout}
+        use_amp = {config.use_amp}
         
         # Evaluation
-        eval_every={config.eval_every},
-        save_every={config.save_every},
+        eval_every = {config.eval_every}
+        eval_steps = 50  # Fixed value
+        save_every = {config.save_every}
         
         # Checkpointing
-        checkpoint_dir="{exp_dir}/checkpoints"
-    )
+        checkpoint_dir = "{exp_dir}/checkpoints"
+    
+    # Replace the global ModelConfig
+    ModelConfig = ExperimentModelConfig
     
     print(f"🚀 Starting distributed training: {config.experiment_name}")
-    print(f"📊 Model: {{config.d_model}}d, {{config.n_layers}}L, {{config.n_heads}}H")
-    print(f"🔧 Steps: {{config.max_steps}}, LR: {config.learning_rate}")
+    print(f"📊 Model: {{ModelConfig.d_model}}d, {{ModelConfig.n_layers}}L, {{ModelConfig.n_heads}}H")
+    print(f"🔧 Steps: {{ModelConfig.max_steps}}, LR: {{ModelConfig.muon_lr}}")
     
     # Run distributed training
     try:
-        # Use the distributed training function from train_distributed_llm.py
-        run_novita_4090_training()
+        # Use the main distributed training function
+        launch_distributed()
     except Exception as e:
         print(f"❌ Training failed: {{e}}")
+        import traceback
+        traceback.print_exc()
         sys.exit(1)
     
     print("✅ Training completed successfully")
