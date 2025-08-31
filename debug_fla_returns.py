@@ -46,7 +46,7 @@ def test_fla_returns():
         # Test BasedLinearAttention
         print("\n🧪 Testing BasedLinearAttention...")
         try:
-            based = BasedLinearAttention(hidden_size=256, num_heads=4, head_dim=64, mode='chunk').to(device)
+            based = BasedLinearAttention(hidden_size=256, num_heads=8, mode='chunk').to(device)
             result = based(x)
             print(f"BasedLinearAttention returns: {type(result)}")
             if isinstance(result, tuple):
@@ -57,18 +57,7 @@ def test_fla_returns():
                 print(f"  Single tensor shape: {result.shape}")
         except Exception as e:
             print(f"  BasedLinearAttention failed: {e}")
-            print("  Trying with different parameters...")
-            try:
-                based = BasedLinearAttention(hidden_size=256, num_heads=8, head_dim=32, mode='chunk').to(device)
-                result = based(x)
-                print(f"  BasedLinearAttention (8h,32d) returns: {type(result)}")
-                if isinstance(result, tuple):
-                    print(f"    Tuple length: {len(result)}")
-                    print(f"    First element shape: {result[0].shape}")
-                else:
-                    print(f"    Single tensor shape: {result.shape}")
-            except Exception as e2:
-                print(f"  Still failed: {e2}")
+            print("  Skipping BasedLinearAttention for now...")
         
         # Test DeltaNet
         print("\n🧪 Testing DeltaNet...")
