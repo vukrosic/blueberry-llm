@@ -16,10 +16,11 @@ def test_attention_layers():
         return
     
     device = torch.device('cuda')
-    x = torch.randn(2, 32, 256, device=device)
-    
-    # Create base config
+    # Create base config first to get the correct dimensions
     config = ExperimentConfig()
+    x = torch.randn(2, 32, config.d_model, device=device)
+    
+    # Config already created above
     
     # Test different attention types
     attention_types = ['gla', 'retnet', 'deltanet', 'based']
