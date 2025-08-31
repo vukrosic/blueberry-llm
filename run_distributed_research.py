@@ -16,16 +16,19 @@ from tiny_llm_benchmarks import TinyLLMBenchmark, find_checkpoints
 class DistributedExperimentConfig(ExperimentConfig):
     """Extended config for distributed training"""
     def __init__(self, **kwargs):
+        # Extract distributed-specific params
+        self.num_gpus = kwargs.pop('num_gpus', 8)
+        
         # Set distributed training defaults
-        kwargs.setdefault('num_gpus', 8)
         kwargs.setdefault('max_steps', 500)  # Short test runs
         kwargs.setdefault('eval_every', 100)  # Evaluate more frequently
         kwargs.setdefault('save_every', 500)  # Save at the end
+        
         super().__init__(**kwargs)
     
     def to_dict(self):
         result = super().to_dict()
-        result['num_gpus'] = getattr(self, 'num_gpus', 8)
+        result['num_gpus'] = self.num_gpus
         return result
 
 def create_distributed_training_script(config: DistributedExperimentConfig, exp_dir: str):
