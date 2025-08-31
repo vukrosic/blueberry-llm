@@ -128,9 +128,13 @@ class FLAGatedLinearAttention(nn.Module):
     def __init__(self, config: ExperimentConfig):
         super().__init__()
         self.gla = GatedLinearAttention(
+            mode='chunk',
             hidden_size=config.d_model,
             num_heads=config.n_heads,
-            mode='chunk'  # Use chunk mode for training efficiency
+            expand_k=0.5,
+            expand_v=1.0,
+            use_output_gate=True,
+            fuse_norm=True
         )
     
     def forward(self, x: torch.Tensor, **kwargs) -> torch.Tensor:
@@ -147,9 +151,13 @@ class FLARetNet(nn.Module):
     def __init__(self, config: ExperimentConfig):
         super().__init__()
         self.retnet = MultiScaleRetention(
+            mode='chunk',
             hidden_size=config.d_model,
             num_heads=config.n_heads,
-            mode='chunk'  # Use chunk mode for training
+            expand_k=1.0,
+            expand_v=2.0,
+            use_output_gate=True,
+            fuse_norm=True
         )
     
     def forward(self, x: torch.Tensor, **kwargs) -> torch.Tensor:
@@ -183,6 +191,8 @@ class FLABased(nn.Module):
         self.based = BasedLinearAttention(
             hidden_size=config.d_model,
             num_heads=config.n_heads,
+            num_key_value_heads=config.n_heads,
+            feature_dim=16,
             mode='chunk'
         )
     
@@ -199,9 +209,14 @@ class FLADeltaNet(nn.Module):
     def __init__(self, config: ExperimentConfig):
         super().__init__()
         self.deltanet = DeltaNet(
+            mode='chunk',
             hidden_size=config.d_model,
             num_heads=config.n_heads,
-            mode='chunk'
+            expand_k=1.0,
+            expand_v=1.0,
+            use_beta=True,
+            use_gate=False,
+            use_short_conv=True
         )
     
     def forward(self, x: torch.Tensor, **kwargs) -> torch.Tensor:
