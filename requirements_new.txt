@@ -1,0 +1,29 @@
+# Core ML libraries
+torch>=2.5.0
+transformers>=4.45.0
+datasets>=3.3.0
+tokenizers>=0.13.0
+
+# Flash Linear Attention - THE MAIN LIBRARY
+flash-linear-attention
+
+# Training utilities
+tqdm
+numpy
+einops
+
+# Data processing
+huggingface_hub
+
+# Visualization and analysis
+matplotlib
+seaborn
+
+# Development utilities
+pytest
+black
+isort
+
+# Required by FLA
+triton>=3.0.0
+causal-conv1d>=1.4.0

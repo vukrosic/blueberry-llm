@@ -19,17 +19,27 @@ import numpy as np
 import random
 import string
 
-# Import your model classes
+# Import model classes
 try:
-    from train_distributed_llm import MinimalLLM, ModelConfig
-    print("📦 Using distributed training model")
+    from models.base_model import BaseTransformer
+    from configs.base_config import ExperimentConfig
+    print("📦 Using new framework models")
+    
+    # For backward compatibility
+    MinimalLLM = BaseTransformer
+    ModelConfig = ExperimentConfig
+    
 except ImportError:
     try:
-        from train_llm import MinimalLLM, ModelConfig
-        print("📦 Using regular training model")
+        from train_distributed_llm import MinimalLLM, ModelConfig
+        print("📦 Using distributed training model")
     except ImportError:
-        print("❌ Could not import model classes")
-        exit(1)
+        try:
+            from train_llm import MinimalLLM, ModelConfig
+            print("📦 Using regular training model")
+        except ImportError:
+            print("❌ Could not import model classes")
+            exit(1)
 
 class TinyLLMBenchmark:
     def __init__(self, model_path: str, device: str = 'auto'):

@@ -17,8 +17,17 @@ import argparse
 from typing import Dict, List, Tuple
 import numpy as np
 
-# Import your model classes
-from train_distributed_llm import MinimalLLM, ModelConfig
+# Import model classes
+try:
+    from models.base_model import BaseTransformer
+    from configs.base_config import ExperimentConfig
+    
+    # For backward compatibility
+    MinimalLLM = BaseTransformer
+    ModelConfig = ExperimentConfig
+    
+except ImportError:
+    from train_distributed_llm import MinimalLLM, ModelConfig
 
 class HellaSwagEvaluator:
     def __init__(self, model_path: str, device: str = 'auto'):
