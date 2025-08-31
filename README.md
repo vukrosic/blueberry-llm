@@ -1,3 +1,5 @@
+Bugs with train_distributed_path_llm.py
+
 # LLM Research Framework
 
 A structured research framework for experimenting with different attention mechanisms and architectures, inspired by Flash Linear Attention. This framework enables systematic ablation studies comparing standard attention, Gated Linear Attention (GLA), RetNet, Mamba, and other architectures.
